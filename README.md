@@ -19,7 +19,7 @@ Gore is a full feature redis client for Go
 ## Installation
 
 ```
-go get github.com/keimoonvie/gore
+go get github.com/keimoon/gore
 ```
 
 ## Contributing
