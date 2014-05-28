@@ -2,6 +2,7 @@ package gore
 
 import (
 	"testing"
+	"fmt"
 )
 
 func TestPipeline(t *testing.T) {
@@ -58,16 +59,16 @@ func TestPipelineGoroutine(t *testing.T) {
 		go func(conn *Conn, c chan bool, x int64) {
 			defer func() {
 				c <- true
-                        }()
+			}()
 			_, err := NewCommand("SET", x, x).Run(conn)
 			if err != nil {
 				t.Fatal(err)
 			}
 			rep, err := NewCommand("GET", x).Run(conn)
-                        if err != nil {
-                                t.Fatal(err)
+			if err != nil {
+				t.Fatal(err)
 			}
-                        y, err := rep.Int()
+			y, err := rep.Int()
 			if err != nil || y != x {
 				t.Fatal(err, x, y)
 			}
@@ -77,10 +78,10 @@ func TestPipelineGoroutine(t *testing.T) {
 		go func(conn *Conn, c chan bool, x int64) {
 			defer func() {
 				c <- true
-                        }()
+			}()
 			p := NewPipeline()
 			for j := 0; j < 100; j++ {
-				val := 1000 + x * 100 + int64(j)
+				val := 1000 + x*100 + int64(j)
 				p.Add(NewCommand("SET", val, val))
 			}
 			replies, err := p.Run(conn)
@@ -93,28 +94,47 @@ func TestPipelineGoroutine(t *testing.T) {
 				}
 			}
 			p = NewPipeline()
-                        for j := 0; j < 100; j++ {
-                                val := 1000 + x * 100 + int64(j)
-                                p.Add(NewCommand("GET", val))
-                        }
-                        replies, err = p.Run(conn)
-                        if err != nil || len(replies) != 100 {
-                                t.Fatal(err, len(replies))
-                        }
-                        for j, r := range replies {
+			for j := 0; j < 100; j++ {
+				val := 1000 + x*100 + int64(j)
+				p.Add(NewCommand("GET", val))
+			}
+			replies, err = p.Run(conn)
+			if err != nil || len(replies) != 100 {
+				t.Fatal(err, len(replies))
+			}
+			for j, r := range replies {
 				y, err := r.Int()
-				if err != nil || y != 1000 + x * 100 + int64(j) {
+				if err != nil || y != 1000+x*100+int64(j) {
 					t.Fatal(err, x, j, y)
-                                }
-                        }
+				}
+			}
 		}(conn, c, int64(i))
 	}
 	for i := 0; i < 1100; i++ {
-		<- c
-        }
+		<-c
+	}
 
 	rep, err := NewCommand("FLUSHALL").Run(conn)
 	if err != nil || !rep.IsOk() {
 		t.Fatal(err, "not ok")
 	}
+}
+
+func ExamplePipeline() {
+	conn, err := Dial("localhost:6379", 0)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	p := NewPipeline()
+	p.Add(NewCommand("SET", "kirisame", "marisa"))
+	p.Add(NewCommand("SET", "alice", "margatroid"))
+	replies, _ := p.Run(conn)
+	for _, r := range replies {
+		if !r.IsOk() {
+			fmt.Println("not ok")
+		}
+	}
+	NewCommand("FLUSHALL").Run(conn)
 }

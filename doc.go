@@ -76,12 +76,24 @@ To convert an array reply to a slice, you can use Slice method:
   s := []int
   err := rep.Slice(&s) // Convert an array reply to a slice of integer
 
-Gore supports following slice element type:
+The following slice element types are supported:
   - integer (int, int64)
   - float (float64)
   - string and []byte
   - FixInt and VarInt
   - *gore.Pair for converting map data from HGETALL or ZRANGE WITHSCORES
+
+Pipeline
+
+Gore supports pipelining using gore.Pipeline:
+
+  p := gore.NewPipeline()
+  p.Add(gore.NewCommand("SET", "kirisame", "marisa"))
+  p.Add(gore.NewCommand("SET", "alice", "margatroid"))
+  replies, _ := p.Run(conn)
+  for _, r := range replies {
+      // Deal with individual reply here
+  }
 
 */
 package gore

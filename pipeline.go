@@ -7,14 +7,12 @@ import (
 // Pipeline keeps a list of command for sending to redis once, saving network roundtrip
 type Pipeline struct {
 	commands []*Command
-	sent     bool
 }
 
 // NewPipeline returns new Pipeline
 func NewPipeline() *Pipeline {
 	return &Pipeline{
 		commands: []*Command{},
-		sent:     false,
 	}
 }
 
@@ -23,15 +21,16 @@ func (p *Pipeline) Add(cmd ...*Command) {
 	p.commands = append(p.commands, cmd...)
 }
 
+// Reset clears all command in the pipeline
+func (p *Pipeline) Reset() {
+	p.commands = []*Command{}
+}
+
 // Run sends the pipeline and returns a slice of Reply
 func (p *Pipeline) Run(conn *Conn) ([]*Reply, error) {
 	if len(p.commands) == 0 {
 		return nil, nil
 	}
-	if p.sent {
-		return nil, ErrPipelineSent
-	}
-	p.sent = true
 	conn.mutex.Lock()
 	if conn.state != connStateConnected {
 		conn.mutex.Unlock()
