@@ -13,7 +13,7 @@ Gore is a full feature redis client for Go
 
 ## Documentation
 
-* API Document
+* [API Document](http://godoc.org/github.com/keimoon/gore)
 * Guides
 
 ## Installation
