@@ -56,7 +56,7 @@ func (r *Reply) Bytes() ([]byte, error) {
 }
 
 // Int parses string value to int64. To get the integer value from
-// command like INC, use Integer()
+// command like INCR, use Integer()
 func (r *Reply) Int() (int64, error) {
 	s, err := r.String()
 	if err != nil {
@@ -95,7 +95,7 @@ func (r *Reply) Bool() (bool, error) {
 	}
 }
 
-// Integer returns integer value of a reply, such as INC command
+// Integer returns integer value of a reply, such as INCR command
 func (r *Reply) Integer() (int64, error) {
 	if r.Type() != ReplyInteger {
 		return 0, ErrType
