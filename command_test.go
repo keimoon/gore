@@ -184,7 +184,7 @@ func TestArrayValue(t *testing.T) {
 	}
 }
 
-func TestGoroutine(t *testing.T) {
+func TestCommandGoroutine(t *testing.T) {
 	conn, err := Dial("localhost:6379", 0)
 	if err != nil {
 		t.Fatal(err)
@@ -192,26 +192,28 @@ func TestGoroutine(t *testing.T) {
 	defer conn.Close()
 	c := make(chan bool, 20)
 	for i := 0; i < 2176; i++ {
-		go func(conn *Conn, c chan bool) {
-			_, err := NewCommand("INCR", "X").Run(conn)
+		go func(conn *Conn, c chan bool, x int64) {
+			defer func() {
+				c <- true
+			}()
+			_, err := NewCommand("SET", x, x).Run(conn)
 			if err != nil {
 				t.Fatal(err)
 			}
-			c <- true
-		}(conn, c)
+			rep, err := NewCommand("GET", x).Run(conn)
+			if err != nil {
+				t.Fatal(err)
+			}
+			y, err := rep.Int()
+			if err != nil || y != x {
+				t.Fatal(err, x, y)
+			}
+		}(conn, c, int64(i))
 	}
 	for i := 0; i < 2176; i++ {
 		<- c
 	}
-	rep, err := NewCommand("GET", "X").Run(conn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	x, err := rep.Int()
-	if err != nil || x != 2176 {
-		t.Fatal(err, x)
-	}
-	rep, err = NewCommand("FLUSHALL").Run(conn)
+	rep, err := NewCommand("FLUSHALL").Run(conn)
 	if err != nil || !rep.IsOk() {
 		t.Fatal(err, "not ok")
 	}

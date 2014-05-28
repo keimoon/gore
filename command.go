@@ -43,6 +43,12 @@ func (cmd *Command) Run(conn *Conn) (*Reply, error) {
 		conn.reconnect()
 		return nil, ErrWrite
 	}
+	err = conn.wb.Flush()
+	if err != nil {
+                conn.writeMutex.Unlock()
+                conn.reconnect()
+                return nil, ErrWrite
+        }
 	// Djiskstra will not like this
 	conn.readMutex.Lock()
 	conn.writeMutex.Unlock()
@@ -98,7 +104,7 @@ func (cmd *Command) writeCommand(conn *Conn) error {
 			return err
 		}
 	}
-	return conn.wb.Flush()
+	return nil
 }
 
 func writeString(s string, conn *Conn) error {
