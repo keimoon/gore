@@ -35,7 +35,7 @@ func Dial(address string, timeout time.Duration) (*Conn, error) {
 	return conn, err
 }
 
-// Close closes the connection with redis server
+// Close closes the connection
 func (c *Conn) Close() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -44,6 +44,36 @@ func (c *Conn) Close() error {
 	}
 	c.state = connStateNotConnected
 	return c.tcpConn.Close()
+}
+
+// Lock locks the whole connection
+func (c *Conn) Lock() {
+	c.mutex.Lock()
+}
+
+// Unlock unlocks the whole connection
+func (c *Conn) Unlock() {
+	c.mutex.Unlock()
+}
+
+// LockRead should be called before reading
+func (c *Conn) LockRead() {
+	c.readMutex.Lock()
+}
+
+// UnlockRead should be called after reading
+func (c *Conn) UnlockRead() {
+	c.readMutex.Unlock()
+}
+
+// LockWrite should be called before writing
+func (c *Conn) LockWrite() {
+	c.writeMutex.Lock()
+}
+
+// UnlockWrite should be called after writing
+func (c *Conn) UnlockWrite() {
+	c.writeMutex.Unlock()
 }
 
 func (c *Conn) connect(address string, timeout time.Duration) error {
@@ -65,6 +95,10 @@ func (c *Conn) connect(address string, timeout time.Duration) error {
 		c.wb = bufio.NewWriter(c.tcpConn)
 	}
 	return err
+}
+
+func (c *Conn) fail() {
+	c.reconnect()
 }
 
 func (c *Conn) reconnect() {

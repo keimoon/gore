@@ -304,4 +304,8 @@ var (
 		replyType:   ReplyStatus,
 		stringValue: []byte{'P', 'O', 'N', 'G'},
 	}
+	queuedReply = &Reply{
+		replyType:   ReplyStatus,
+		stringValue: []byte{'Q', 'U', 'E', 'U', 'E', 'D'},
+	}
 )

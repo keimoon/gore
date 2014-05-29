@@ -18,8 +18,6 @@ func ExampleCommand() {
 	rep, _ = NewCommand("GET", "kirisame").Run(conn)
 	s, _ := rep.String()
 	fmt.Println(s)
-	//Output: true
-	// marisa
 }
 
 func ExampleReply() {
@@ -37,9 +35,6 @@ func ExampleReply() {
 	rep, _ = NewCommand("GET", "int").Run(conn)
 	x, _ := rep.Int()
 	fmt.Println(x)
-
-	//Output: true
-	// 123456789
 }
 
 func ExampleReply_convert() {

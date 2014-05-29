@@ -24,41 +24,38 @@ func NewCommand(name string, args ...interface{}) *Command {
 
 // Run sends command to redis
 func (cmd *Command) Run(conn *Conn) (*Reply, error) {
-	if cmd.name == "" {
-		return nil, ErrCommandEmpty
-	}
-	conn.mutex.Lock()
+	conn.Lock()
 	if conn.state != connStateConnected {
-		conn.mutex.Unlock()
+		conn.Unlock()
 		return nil, ErrNotConnected
 	}
-	conn.mutex.Unlock()
-	conn.writeMutex.Lock()
+	conn.Unlock()
+	conn.LockWrite()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetWriteDeadline(time.Now().Add(conn.RequestTimeout))
 	}
 	err := cmd.writeCommand(conn)
 	if err != nil {
-		conn.writeMutex.Unlock()
+		conn.UnlockWrite()
 		conn.reconnect()
 		return nil, ErrWrite
 	}
 	err = conn.wb.Flush()
 	if err != nil {
-                conn.writeMutex.Unlock()
+                conn.UnlockWrite()
                 conn.reconnect()
                 return nil, ErrWrite
         }
 	// Djiskstra will not like this
-	conn.readMutex.Lock()
-	conn.writeMutex.Unlock()
+	conn.LockRead()
+	conn.UnlockWrite()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetReadDeadline(time.Now().Add(conn.RequestTimeout))
 	}
 	rep, err := readReply(conn)
-	conn.readMutex.Unlock()
+	conn.UnlockRead()
 	if err != nil {
-		conn.reconnect()
+		conn.fail()
 	}
 	return rep, err
 }
@@ -137,6 +134,9 @@ func readReply(conn *Conn) (*Reply, error) {
 			return okReply, nil
 		case len(line) == 5 && line[1] == 'P' && line[2] == 'O' && line[3] == 'N' && line[4] == 'G':
 			return pongReply, nil
+		case len(line) == 7 && line[1] == 'Q' && line[2] == 'U' && line[3] == 'E' && 
+			line[4] == 'U' && line[5] == 'E' && line[6] == 'D':
+			return queuedReply, nil
 		default:
 			return &Reply{
 				replyType:   ReplyStatus,
