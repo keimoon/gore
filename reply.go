@@ -1,7 +1,9 @@
 package gore
 
 import (
+	"io"
 	"strconv"
+	"time"
 )
 
 // Reply type, similar to Hiredis
@@ -293,6 +295,121 @@ func (r *Reply) IsArray() bool {
 // IsError checks if reply is an error reply or not
 func (r *Reply) IsError() bool {
 	return r.Type() == ReplyError
+}
+
+// Receive safely read a reply from conn
+func Receive(conn *Conn) (*Reply, error) {
+	conn.LockRead()
+	if conn.RequestTimeout != 0 {
+		conn.tcpConn.SetReadDeadline(time.Now().Add(conn.RequestTimeout))
+	}
+	rep, err := readReply(conn)
+	conn.UnlockRead()
+	if err != nil {
+		conn.fail()
+	}
+	return rep, nil
+}
+
+// Motivated by redigo. Good job, man
+func readReply(conn *Conn) (*Reply, error) {
+	line, err := readLine(conn)
+	if err != nil {
+		return nil, err
+	}
+	if len(line) == 0 {
+		return nil, ErrRead
+	}
+	switch line[0] {
+	case '+':
+		switch {
+		case len(line) == 3 && line[1] == 'O' && line[2] == 'K':
+			return okReply, nil
+		case len(line) == 5 && line[1] == 'P' && line[2] == 'O' && line[3] == 'N' && line[4] == 'G':
+			return pongReply, nil
+		case len(line) == 7 && line[1] == 'Q' && line[2] == 'U' && line[3] == 'E' &&
+			line[4] == 'U' && line[5] == 'E' && line[6] == 'D':
+			return queuedReply, nil
+		default:
+			return &Reply{
+				replyType:   ReplyStatus,
+				stringValue: line[1:],
+			}, nil
+
+		}
+	case '-':
+		return &Reply{
+			replyType:   ReplyError,
+			stringValue: line[1:],
+		}, nil
+	case ':':
+		intValue, err := strconv.ParseInt(string(line[1:]), 10, 64)
+		if err != nil {
+			return nil, ErrRead
+		}
+		return &Reply{
+			replyType:    ReplyInteger,
+			integerValue: intValue,
+		}, nil
+	case '$':
+		l, err := strconv.ParseInt(string(line[1:]), 10, 64)
+		if err != nil {
+			return nil, ErrRead
+		}
+		if l < 0 {
+			return &Reply{
+				replyType: ReplyNil,
+			}, nil
+		}
+		b := make([]byte, l)
+		_, err = io.ReadFull(conn.rb, b)
+		if err != nil {
+			return nil, ErrRead
+		}
+		line, err = readLine(conn)
+		if err != nil || len(line) != 0 {
+			return nil, ErrRead
+		}
+		return &Reply{
+			replyType:   ReplyString,
+			stringValue: b,
+		}, nil
+	case '*':
+		l, err := strconv.ParseInt(string(line[1:]), 10, 64)
+		if err != nil {
+			return nil, ErrRead
+		}
+		if l < 0 {
+			return &Reply{
+				replyType: ReplyNil,
+			}, nil
+		}
+		replyArray := make([]*Reply, l)
+		for i := range replyArray {
+			replyArray[i], err = readReply(conn)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return &Reply{
+			replyType:  ReplyArray,
+			arrayValue: replyArray,
+		}, nil
+	default:
+		return nil, ErrRead
+	}
+}
+
+func readLine(conn *Conn) ([]byte, error) {
+	b, err := conn.rb.ReadSlice('\n')
+	if err != nil {
+		return nil, ErrRead
+	}
+	i := len(b) - 2
+	if i < 0 || b[i] != '\r' {
+		return nil, ErrRead
+	}
+	return b[:i], nil
 }
 
 var (

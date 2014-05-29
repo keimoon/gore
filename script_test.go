@@ -64,41 +64,41 @@ func TestScriptMap(t *testing.T) {
 	err = ioutil.WriteFile("testscripts/get.lua", []byte(scriptGet), 0644)
 	if err != nil {
 		t.Fatal(err)
-        }
+	}
 	err = ioutil.WriteFile("testscripts/error.lua", []byte(scriptError), 0644)
 	if err != nil {
 		t.Fatal(err)
-        }
+	}
 	err = LoadScripts("testscripts", ".*\\.lua")
 	if err != nil {
 		t.Fatal(err)
-	}	
-	conn, err := Dial("localhost:6379", 0)
-        if err != nil {
-                t.Fatal(err)
 	}
-        defer conn.Close()
+	conn, err := Dial("localhost:6379", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
 	s := GetScript("set.lua")
 	rep, err := s.Execute(conn, 1, "kirisame", "marisa")
 	if err != nil || !rep.IsOk() {
-                t.Fatal(err, rep)
+		t.Fatal(err, rep)
 	}
 	s = GetScript("get.lua")
 	rep, err = s.Execute(conn, 1, "kirisame")
 	if err != nil {
-                t.Fatal(err)
+		t.Fatal(err)
 	}
-        val, err := rep.String()
+	val, err := rep.String()
 	if err != nil || val != "marisa" {
 		t.Fatal(err, val)
 	}
 	s = GetScript("error.lua")
-        rep, err = s.Execute(conn, 1, "kirisame")
-        if err != nil || !rep.IsError() {
-                t.Fatal(err, rep)
-        }
-        rep, err = NewCommand("FLUSHALL").Run(conn)
-        if err != nil || !rep.IsOk() {
-                t.Fatal(err, "not ok")
-        }
+	rep, err = s.Execute(conn, 1, "kirisame")
+	if err != nil || !rep.IsError() {
+		t.Fatal(err, rep)
+	}
+	rep, err = NewCommand("FLUSHALL").Run(conn)
+	if err != nil || !rep.IsOk() {
+		t.Fatal(err, "not ok")
+	}
 }

@@ -211,7 +211,7 @@ func TestCommandGoroutine(t *testing.T) {
 		}(conn, c, int64(i))
 	}
 	for i := 0; i < 2176; i++ {
-		<- c
+		<-c
 	}
 	rep, err := NewCommand("FLUSHALL").Run(conn)
 	if err != nil || !rep.IsOk() {

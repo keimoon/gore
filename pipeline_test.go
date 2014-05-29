@@ -2,7 +2,6 @@ package gore
 
 import (
 	"testing"
-	"fmt"
 )
 
 func TestPipeline(t *testing.T) {
@@ -119,4 +118,3 @@ func TestPipelineGoroutine(t *testing.T) {
 		t.Fatal(err, "not ok")
 	}
 }
-

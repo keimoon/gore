@@ -33,7 +33,7 @@ func ToFixInt(b []byte) (int64, error) {
 	}
 	var x int64 = 0
 	for i := range b {
-		x = (x << 8) + int64(b[i] & 0xFF)
+		x = (x << 8) + int64(b[i]&0xFF)
 	}
 	return x, nil
 }
@@ -60,7 +60,7 @@ func (x VarInt) Bytes() []byte {
 			break
 		}
 	}
-	b[pos - 1] &= 0x7F
+	b[pos-1] &= 0x7F
 	return b[0:pos]
 }
 
@@ -71,8 +71,8 @@ func ToVarInt(b []byte) (int64, error) {
 	}
 	var x int64 = 0
 	for i := range b[1:] {
-		x += int64((b[i + 1] & 0x7F)) << uint(7 * i)
-		if b[i + 1] < 128 {
+		x += int64((b[i+1] & 0x7F)) << uint(7*i)
+		if b[i+1] < 128 {
 			break
 		}
 	}

@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-Gore is a full feature Redis client for go:
+Gore is a full feature Redis client for Go:
   - Convenient command building and reply parsing
   - Pipeline, multi-exec, LUA scripting
   - Pubsub
@@ -117,5 +117,31 @@ If your application use a lot of script files, you can manage them through Scrip
   gore.LoadScripts("scripts", ".*\\.lua") // Load all .lua file from scripts folder
   s := gore.GetScripts("set.lua") // Get script from set.lua file
   rep, err := s.Execute(conn, 1, "kirisame", "marisa") // And execute
+
+Pubsub
+
+Publish message to a channel is easy, you can use gore.Command to issue a PUBLISH
+over a connection, or use gore.Publish method:
+
+  gore.Publish(conn, "touhou", "Hello!")
+
+To handle subscriptions, you should allocate a dedicated connection and assign it
+to gore.Subscriptions:
+
+  subs := gore.NewSubscriptions(conn)
+  subs.Subscribe("test")
+  subs.PSubscribe("tou*")
+
+To receive messages, the subcriber should spawn a new goroutine and use
+Subscriptions Message channel:
+
+  go func() {
+      for message := range subs.Message() {
+          if message == nil {
+               break
+          }
+          fmt.Println("Got message from %s, originate from %s: %s", message.Channel, message.OriginalChannel, message.Message)
+      }
+  }()
 */
 package gore

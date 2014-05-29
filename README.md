@@ -1,6 +1,6 @@
 # Gore
 
-Gore is a full feature redis client for Go
+Gore is a full feature Redis client for Go
 
 ## Features
 
@@ -9,7 +9,7 @@ and [reply parsing](https://github.com/keimoon/gore/wiki/Reply)
 * [Pipeline](https://github.com/keimoon/gore/wiki/Pipeline), 
 multi-exec, 
 [LUA scripting](https://github.com/keimoon/gore/wiki/Script)
-* Pubsub
+* [Pubsub](https://github.com/keimoon/gore/wiki/Pubsub)
 * Connection pool
 * Redis sentinel
 * Client implementation of sharding

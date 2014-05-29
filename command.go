@@ -2,7 +2,6 @@ package gore
 
 import (
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -24,12 +23,9 @@ func NewCommand(name string, args ...interface{}) *Command {
 
 // Run sends command to redis
 func (cmd *Command) Run(conn *Conn) (*Reply, error) {
-	conn.Lock()
 	if conn.state != connStateConnected {
-		conn.Unlock()
 		return nil, ErrNotConnected
 	}
-	conn.Unlock()
 	conn.LockWrite()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetWriteDeadline(time.Now().Add(conn.RequestTimeout))
@@ -42,10 +38,10 @@ func (cmd *Command) Run(conn *Conn) (*Reply, error) {
 	}
 	err = conn.wb.Flush()
 	if err != nil {
-                conn.UnlockWrite()
-                conn.reconnect()
-                return nil, ErrWrite
-        }
+		conn.UnlockWrite()
+		conn.reconnect()
+		return nil, ErrWrite
+	}
 	// Djiskstra will not like this
 	conn.LockRead()
 	conn.UnlockWrite()
@@ -58,6 +54,26 @@ func (cmd *Command) Run(conn *Conn) (*Reply, error) {
 		conn.fail()
 	}
 	return rep, err
+}
+
+// Send safely sends a command over conn
+func (cmd *Command) Send(conn *Conn) error {
+	conn.LockWrite()
+	if conn.RequestTimeout != 0 {
+		conn.tcpConn.SetWriteDeadline(time.Now().Add(conn.RequestTimeout))
+	}
+	err := cmd.writeCommand(conn)
+	conn.UnlockWrite()
+	if err != nil {
+		conn.reconnect()
+		return ErrWrite
+	}
+	err = conn.wb.Flush()
+	if err != nil {
+		conn.reconnect()
+		return ErrWrite
+	}
+	return nil
 }
 
 func (cmd *Command) writeCommand(conn *Conn) error {
@@ -116,105 +132,4 @@ func writeBytes(b []byte, conn *Conn) error {
 	conn.wb.Write(b)
 	_, err := conn.wb.WriteString("\r\n")
 	return err
-}
-
-// Motivated by redigo. Good job, man
-func readReply(conn *Conn) (*Reply, error) {
-	line, err := readLine(conn)
-	if err != nil {
-		return nil, err
-	}
-	if len(line) == 0 {
-		return nil, ErrRead
-	}
-	switch line[0] {
-	case '+':
-		switch {
-		case len(line) == 3 && line[1] == 'O' && line[2] == 'K':
-			return okReply, nil
-		case len(line) == 5 && line[1] == 'P' && line[2] == 'O' && line[3] == 'N' && line[4] == 'G':
-			return pongReply, nil
-		case len(line) == 7 && line[1] == 'Q' && line[2] == 'U' && line[3] == 'E' && 
-			line[4] == 'U' && line[5] == 'E' && line[6] == 'D':
-			return queuedReply, nil
-		default:
-			return &Reply{
-				replyType:   ReplyStatus,
-				stringValue: line[1:],
-			}, nil
-
-		}
-	case '-':
-		return &Reply{
-			replyType:   ReplyError,
-			stringValue: line[1:],
-		}, nil
-	case ':':
-		intValue, err := strconv.ParseInt(string(line[1:]), 10, 64)
-		if err != nil {
-			return nil, ErrRead
-		}
-		return &Reply{
-			replyType:    ReplyInteger,
-			integerValue: intValue,
-		}, nil
-	case '$':
-		l, err := strconv.ParseInt(string(line[1:]), 10, 64)
-		if err != nil {
-			return nil, ErrRead
-		}
-		if l < 0 {
-			return &Reply{
-				replyType: ReplyNil,
-			}, nil
-		}
-		b := make([]byte, l)
-		_, err = io.ReadFull(conn.rb, b)
-		if err != nil {
-			return nil, ErrRead
-		}
-		line, err = readLine(conn)
-		if err != nil || len(line) != 0 {
-			return nil, ErrRead
-		}
-		return &Reply{
-			replyType:   ReplyString,
-			stringValue: b,
-		}, nil
-	case '*':
-		l, err := strconv.ParseInt(string(line[1:]), 10, 64)
-		if err != nil {
-			return nil, ErrRead
-		}
-		if l < 0 {
-			return &Reply{
-				replyType: ReplyNil,
-			}, nil
-		}
-		replyArray := make([]*Reply, l)
-		for i := range replyArray {
-			replyArray[i], err = readReply(conn)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return &Reply{
-			replyType:  ReplyArray,
-			arrayValue: replyArray,
-		}, nil
-	default:
-		return nil, ErrRead
-	}
-}
-
-func readLine(conn *Conn) ([]byte, error) {
-	b, err := conn.rb.ReadSlice('\n')
-	if err != nil {
-		return nil, ErrRead
-	}
-	i := len(b) - 2
-	if i < 0 || b[i] != '\r' {
-		return nil, ErrRead
-	}
-	return b[:i], nil
 }
