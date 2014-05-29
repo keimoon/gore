@@ -120,21 +120,3 @@ func TestPipelineGoroutine(t *testing.T) {
 	}
 }
 
-func ExamplePipeline() {
-	conn, err := Dial("localhost:6379", 0)
-	if err != nil {
-		return
-	}
-	defer conn.Close()
-
-	p := NewPipeline()
-	p.Add(NewCommand("SET", "kirisame", "marisa"))
-	p.Add(NewCommand("SET", "alice", "margatroid"))
-	replies, _ := p.Run(conn)
-	for _, r := range replies {
-		if !r.IsOk() {
-			fmt.Println("not ok")
-		}
-	}
-	NewCommand("FLUSHALL").Run(conn)
-}

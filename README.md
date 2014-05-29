@@ -6,7 +6,9 @@ Gore is a full feature redis client for Go
 
 * Convenient [command building](https://github.com/keimoon/gore/wiki/Connection-and-Command) 
 and [reply parsing](https://github.com/keimoon/gore/wiki/Reply)
-* [Pipeline](https://github.com/keimoon/gore/wiki/Pipeline), multi-exec, LUA scripting
+* [Pipeline](https://github.com/keimoon/gore/wiki/Pipeline), 
+multi-exec, 
+[LUA scripting](https://github.com/keimoon/gore/wiki/Script)
 * Pubsub
 * Connection pool
 * Redis sentinel

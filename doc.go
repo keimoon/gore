@@ -95,5 +95,27 @@ Gore supports pipelining using gore.Pipeline:
       // Deal with individual reply here
   }
 
+Script
+
+Script can be set from a string or read from a file, and can be executed over
+a connection. Gore makes sure to use EVALSHA before using EVAL to save bandwidth.
+
+  s := gore.NewScript()
+  s.SetBody("return redis.call('SET', KEYS[1], ARGV[1])")
+  rep, err := s.Execute(conn, 1, "kirisame", "marisa")
+
+Script can be loaded from a file:
+
+  s := gore.NewScript()
+  s.ReadFromFile("scripts/set.lua")
+  rep, err := s.Execute(conn, 1, "kirisame", "marisa")
+
+Script map
+
+If your application use a lot of script files, you can manage them through ScriptMap
+
+  gore.LoadScripts("scripts", ".*\\.lua") // Load all .lua file from scripts folder
+  s := gore.GetScripts("set.lua") // Get script from set.lua file
+  rep, err := s.Execute(conn, 1, "kirisame", "marisa") // And execute
 */
 package gore
