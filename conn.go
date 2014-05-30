@@ -19,8 +19,6 @@ type Conn struct {
 	tcpConn        net.Conn
 	state          int
 	mutex          sync.Mutex
-	writeMutex     sync.Mutex
-	readMutex      sync.Mutex
 	rb             *bufio.Reader
 	wb             *bufio.Writer
 	RequestTimeout time.Duration
@@ -54,26 +52,6 @@ func (c *Conn) Lock() {
 // Unlock unlocks the whole connection
 func (c *Conn) Unlock() {
 	c.mutex.Unlock()
-}
-
-// LockRead should be called before reading
-func (c *Conn) LockRead() {
-	c.readMutex.Lock()
-}
-
-// UnlockRead should be called after reading
-func (c *Conn) UnlockRead() {
-	c.readMutex.Unlock()
-}
-
-// LockWrite should be called before writing
-func (c *Conn) LockWrite() {
-	c.writeMutex.Lock()
-}
-
-// UnlockWrite should be called after writing
-func (c *Conn) UnlockWrite() {
-	c.writeMutex.Unlock()
 }
 
 func (c *Conn) connect(address string, timeout time.Duration) error {

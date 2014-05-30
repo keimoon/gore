@@ -298,17 +298,18 @@ func (r *Reply) IsError() bool {
 }
 
 // Receive safely read a reply from conn
-func Receive(conn *Conn) (*Reply, error) {
-	conn.LockRead()
+func Receive(conn *Conn) (r *Reply, err error) {
+	conn.Lock()
+	defer func() {
+                conn.Unlock()
+                if err != nil {
+                        conn.fail()
+                }
+	}()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetReadDeadline(time.Now().Add(conn.RequestTimeout))
 	}
-	rep, err := readReply(conn)
-	conn.UnlockRead()
-	if err != nil {
-		conn.fail()
-	}
-	return rep, nil
+	return readReply(conn)
 }
 
 // Motivated by redigo. Good job, man

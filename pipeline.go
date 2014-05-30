@@ -27,33 +27,33 @@ func (p *Pipeline) Reset() {
 }
 
 // Run sends the pipeline and returns a slice of Reply
-func (p *Pipeline) Run(conn *Conn) ([]*Reply, error) {
+func (p *Pipeline) Run(conn *Conn) (r []*Reply, err error) {
 	if len(p.commands) == 0 {
 		return nil, nil
 	}
 	if conn.state != connStateConnected {
 		return nil, ErrNotConnected
 	}
-	conn.LockWrite()
+	conn.Lock()
+	defer func() {
+                conn.Unlock()
+                if err != nil {
+                        conn.fail()
+                }
+	}()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetWriteDeadline(time.Now().Add(conn.RequestTimeout * time.Duration(len(p.commands)/10+1)))
 	}
 	for _, cmd := range p.commands {
-		err := cmd.writeCommand(conn)
+		err = cmd.writeCommand(conn)
 		if err != nil {
-			conn.UnlockWrite()
-			conn.fail()
 			return nil, ErrWrite
 		}
 	}
-	err := conn.wb.Flush()
+	err = conn.wb.Flush()
 	if err != nil {
-		conn.UnlockWrite()
-		conn.fail()
 		return nil, ErrWrite
 	}
-	conn.LockRead()
-	conn.UnlockWrite()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetReadDeadline(time.Now().Add(conn.RequestTimeout * time.Duration(len(p.commands)/10+1)))
 	}
@@ -61,12 +61,9 @@ func (p *Pipeline) Run(conn *Conn) ([]*Reply, error) {
 	for i := range replies {
 		rep, err := readReply(conn)
 		if err != nil {
-			conn.UnlockRead()
-			conn.fail()
 			return nil, err
 		}
 		replies[i] = rep
 	}
-	conn.UnlockRead()
 	return replies, nil
 }

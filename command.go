@@ -22,55 +22,52 @@ func NewCommand(name string, args ...interface{}) *Command {
 }
 
 // Run sends command to redis
-func (cmd *Command) Run(conn *Conn) (*Reply, error) {
+func (cmd *Command) Run(conn *Conn) (r *Reply, err error) {
 	if conn.state != connStateConnected {
 		return nil, ErrNotConnected
 	}
-	conn.LockWrite()
+	conn.Lock()
+	defer func() {
+		conn.Unlock()
+		if err != nil {
+			conn.fail()
+		}
+	}()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetWriteDeadline(time.Now().Add(conn.RequestTimeout))
 	}
-	err := cmd.writeCommand(conn)
+	err = cmd.writeCommand(conn)
 	if err != nil {
-		conn.UnlockWrite()
-		conn.reconnect()
 		return nil, ErrWrite
 	}
 	err = conn.wb.Flush()
 	if err != nil {
-		conn.UnlockWrite()
-		conn.reconnect()
 		return nil, ErrWrite
 	}
-	// Djiskstra will not like this
-	conn.LockRead()
-	conn.UnlockWrite()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetReadDeadline(time.Now().Add(conn.RequestTimeout))
 	}
-	rep, err := readReply(conn)
-	conn.UnlockRead()
-	if err != nil {
-		conn.fail()
-	}
-	return rep, err
+	return readReply(conn)
 }
 
 // Send safely sends a command over conn
-func (cmd *Command) Send(conn *Conn) error {
-	conn.LockWrite()
+func (cmd *Command) Send(conn *Conn) (err error) {
+	conn.Lock()
+	defer func() {
+                conn.Unlock()
+                if err != nil {
+                        conn.fail()
+                }
+	}()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetWriteDeadline(time.Now().Add(conn.RequestTimeout))
 	}
-	err := cmd.writeCommand(conn)
-	conn.UnlockWrite()
+	err = cmd.writeCommand(conn)
 	if err != nil {
-		conn.reconnect()
 		return ErrWrite
 	}
 	err = conn.wb.Flush()
 	if err != nil {
-		conn.reconnect()
 		return ErrWrite
 	}
 	return nil
