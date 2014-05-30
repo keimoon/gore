@@ -61,7 +61,7 @@ func (s *Subscriptions) PSubscribe(channel ...string) error {
 	return s.do("PSUBSCRIBE", channel...)
 }
 
-// Unsubscribes unsubscribes to a list of channels
+// Unsubscribe unsubscribes to a list of channels
 func (s *Subscriptions) Unsubscribe(channel ...string) error {
 	return s.do("UNSUBSCRIBE", channel...)
 }

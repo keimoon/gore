@@ -5,6 +5,7 @@ import (
 )
 
 var (
+	// ErrNumberFormat is returned when formatting number fails.
 	ErrNumberFormat = errors.New("number format error")
 )
 
@@ -31,7 +32,7 @@ func ToFixInt(b []byte) (int64, error) {
 	if len(b) != 8 {
 		return 0, ErrNumberFormat
 	}
-	var x int64 = 0
+	var x int64
 	for i := range b {
 		x = (x << 8) + int64(b[i]&0xFF)
 	}
@@ -69,7 +70,7 @@ func ToVarInt(b []byte) (int64, error) {
 	if len(b) < 2 {
 		return 0, ErrNumberFormat
 	}
-	var x int64 = 0
+	var x int64
 	for i := range b[1:] {
 		x += int64((b[i+1] & 0x7F)) << uint(7*i)
 		if b[i+1] < 128 {

@@ -5,7 +5,7 @@ import (
 )
 
 func TestTransaction(t *testing.T) {
-	conn, err := Dial("localhost:6379", 0)
+	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestTransactionGoroutint(t *testing.T) {
 			defer func() {
 				c <- true
 			}()
-			conn, err := Dial("localhost:6379", 0)
+			conn, err := Dial("localhost:6379")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -89,7 +89,7 @@ func TestTransactionGoroutint(t *testing.T) {
 		<-c
 	}
 
-	conn, err := Dial("localhost:6379", 0)
+	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
 	}

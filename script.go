@@ -29,10 +29,10 @@ func (s *Script) SetBody(body string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.body = strings.TrimSpace(body)
-	return s.create_sha()
+	return s.createSHA()
 }
 
-// ReadFrom reads the script from a file
+// ReadFromFile reads the script from a file
 func (s *Script) ReadFromFile(file string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -41,7 +41,7 @@ func (s *Script) ReadFromFile(file string) error {
 		return err
 	}
 	s.body = strings.TrimSpace(string(b))
-	return s.create_sha()
+	return s.createSHA()
 }
 
 // Execute runs the script over a connection
@@ -72,7 +72,7 @@ func (s *Script) Execute(conn *Conn, keyCount int, keysAndArgs ...interface{}) (
 	return NewCommand("EVAL", args...).Run(conn)
 }
 
-func (s *Script) create_sha() error {
+func (s *Script) createSHA() error {
 	h := sha1.New()
 	_, err := io.WriteString(h, s.body)
 	if err != nil {
@@ -151,7 +151,7 @@ func (sm *ScriptMap) Delete(scriptName string) {
 
 var defaultScriptMap = NewScriptMap()
 
-// Load loads all script files from a folder with a regular expression pattern to the default
+// LoadScripts loads all script files from a folder with a regular expression pattern to the default
 // script map.
 // Loaded script will be keyed by its file name. This method can be called many times
 // to reload script files.
@@ -159,18 +159,18 @@ func LoadScripts(folder, pattern string) error {
 	return defaultScriptMap.Load(folder, pattern)
 }
 
-// Get a script by its name from defaultScriptMap . Nil value will be returned if the name
+// GetScript a script by its name from defaultScriptMap . Nil value will be returned if the name
 // is not found
 func GetScript(scriptName string) *Script {
 	return defaultScriptMap.Get(scriptName)
 }
 
-// Add a script to the default script map
+// AddScript a script to the default script map
 func AddScript(scriptName string, script *Script) {
 	defaultScriptMap.Add(scriptName, script)
 }
 
-// Delete a script from the default script map
+// DeleteScript a script from the default script map
 func DeleteScript(scriptName string) {
 	defaultScriptMap.Delete(scriptName)
 }

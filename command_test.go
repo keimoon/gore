@@ -5,7 +5,7 @@ import (
 )
 
 func TestGetSetBasic(t *testing.T) {
-	conn, err := Dial("localhost:6379", 0)
+	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func TestGetSetBasic(t *testing.T) {
 }
 
 func TestValueConverting(t *testing.T) {
-	conn, err := Dial("localhost:6379", 0)
+	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,7 +106,7 @@ func TestValueConverting(t *testing.T) {
 }
 
 func TestArrayValue(t *testing.T) {
-	conn, err := Dial("localhost:6379", 0)
+	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +185,7 @@ func TestArrayValue(t *testing.T) {
 }
 
 func TestCommandGoroutine(t *testing.T) {
-	conn, err := Dial("localhost:6379", 0)
+	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
 	}

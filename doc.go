@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-Gore is a full feature Redis client for Go:
+Package gore is a full feature Redis client for Go:
   - Convenient command building and reply parsing
   - Pipeline, multi-exec, LUA scripting
   - Pubsub
@@ -16,7 +16,7 @@ Connections
 Gore only supports TCP connection for Redis. The connection is thread-safe and can be auto-repaired
 with or without sentinel.
 
-  conn, err := gore.Dial("localhost:6379", 10 * time.Duration) //Connect to redis server at localhost:6379
+  conn, err := gore.Dial("localhost:6379") //Connect to redis server at localhost:6379
   if err != nil {
     return
   }

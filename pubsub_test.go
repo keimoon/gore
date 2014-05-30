@@ -38,7 +38,7 @@ func (tp *testPubsub) publisher() {
 	defer func() {
 		tp.pubEnd <- true
 	}()
-	conn, err := Dial("localhost:6379", 0)
+	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func (tp *testPubsub) subscriber() {
 	defer func() {
 		tp.subEnd <- true
 	}()
-	conn, err := Dial("localhost:6379", 0)
+	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
 	}

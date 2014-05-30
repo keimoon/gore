@@ -5,7 +5,7 @@ import (
 )
 
 func TestPipeline(t *testing.T) {
-	conn, err := Dial("localhost:6379", 0)
+	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestPipeline(t *testing.T) {
 }
 
 func TestPipelineGoroutine(t *testing.T) {
-	conn, err := Dial("localhost:6379", 0)
+	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
 	}

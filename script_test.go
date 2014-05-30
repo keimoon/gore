@@ -19,7 +19,7 @@ return redis.call('ZRANGE', KEYS[1], 0, -1)
 `
 
 func TestScript(t *testing.T) {
-	conn, err := Dial("localhost:6379", 0)
+	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func TestScriptMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	conn, err := Dial("localhost:6379", 0)
+	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
 	}

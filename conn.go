@@ -25,12 +25,21 @@ type Conn struct {
 }
 
 // Dial opens a TCP connection with a redis server.
-func Dial(address string, timeout time.Duration) (*Conn, error) {
+func Dial(address string) (*Conn, error) {
 	conn := &Conn{
 		RequestTimeout: 10 * time.Second,
 	}
-	err := conn.connect(address, timeout)
+	err := conn.connect(address, 0)
 	return conn, err
+}
+
+// DialTimeout opens a TCP connection with a redis server with a connection timeout
+func DialTimeout(address string, timeout time.Duration) (*Conn, error) {
+        conn := &Conn{
+		RequestTimeout: 10 * time.Second,
+        }
+        err := conn.connect(address, timeout)
+        return conn, err
 }
 
 // Close closes the connection
