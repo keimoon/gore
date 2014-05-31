@@ -105,6 +105,9 @@ func (p *Pool) Acquire() (*Conn, error) {
 // this connection must be usable before pushing it back to the acquirable
 // list.
 func (p *Pool) Release(conn *Conn) {
+	if conn == nil {
+		return
+	}
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if p.closed {

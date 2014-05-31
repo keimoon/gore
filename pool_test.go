@@ -65,3 +65,34 @@ func TestPool(t *testing.T) {
 		t.Fatal(err, "not ok")
 	}
 }
+
+func TestPoolClose(t *testing.T) {
+	pool := &Pool{}
+	err := pool.Dial("localhost:6379")
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := make(chan bool, 20)
+	ready := make(chan bool, 10)
+	for i := 0; i < 1000; i++ {
+		go func() {
+			defer func() {
+				c <- true
+			}()
+			conn, err := pool.Acquire()			
+			if err != nil {
+				t.Fatal(err)
+			}
+			if conn != nil {
+				ready <- true
+			}
+		}()
+	}
+	for i := 0; i < 10; i++ {
+		<- ready
+	}
+	pool.Close()
+	for i := 0; i < 1000; i++ {
+		<-c
+	}
+}

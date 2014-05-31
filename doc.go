@@ -146,6 +146,61 @@ Subscriptions Message channel:
 
 Connection pool
 
+To use connection pool, a Pool should be created when application startup. The Dial() method
+of the pool should be called to make initial connection to the redis server. If Dial() fail,
+it is up to the application to decide to fail fast, or wait and connect again later.
 
+  pool := &gore.Pool{
+      InitialConn: 5,  // Initial number of connections to open
+      MaximumConn: 10, // Maximum number of connections to open
+  }
+  err := pool.Dial("localhost:6379")
+  if err != nil {
+      log.Error(err)
+      return
+  }
+  ...
+
+In each goroutine, a connection from the pool can be get by Acquire() method. Release() method
+should always be called later to return the connection to the pool, even in error situation.
+
+  // Inside a goroutine
+  conn, err := pool.Acquire()
+  if err != nil {
+      // Error can happens when goroutine try to acquire a conn
+      // from the pool. Application should fail fast here.
+      return
+  }
+  defer pool.Release(conn)
+  if conn == nil {
+      // This happens when the pool was closed. Application should
+      // fail here.
+      return
+  }
+  // Do every thing with the conn, exclusively.
+  ...
+
+To gracefully close the pool, call Close() method anywhere in your program.
+
+Transaction
+
+Transaction is implemented using MULTI, EXEC and WATCH. Using transaction
+directly with a Conn is not goroutine-safe, so transaction should be used
+with connection pool only.
+
+  tr := gore.NewTransaction(conn)
+  tr.Watch("a key") // Watch a key
+  tr.Watch("another key")
+  rep, _ := NewCommand("GET", "a key").Run(conn)
+  value, _ := rep.Int()
+  tr.Add(NewCommand("SET", "a key", value + 1)) // Add a command to the transaction
+  _, err := tr.Commit() // Commit the transaction
+  if err == nil {
+       // Transaction OK!!!
+  } else if err == gore.ErrKeyChanged {
+       // Watched key has been changed, transaction should be started over.
+  } else {
+       // Other errors, transaction should be aborted
+  }
 */
 package gore
