@@ -143,5 +143,9 @@ Subscriptions Message channel:
           fmt.Println("Got message from %s, originate from %s: %s", message.Channel, message.OriginalChannel, message.Message)
       }
   }()
+
+Connection pool
+
+
 */
 package gore

@@ -29,6 +29,8 @@ func Dial(address string) (*Conn, error) {
 	conn := &Conn{
 		RequestTimeout: 10 * time.Second,
 	}
+	conn.mutex.Lock()
+        defer conn.mutex.Unlock()
 	err := conn.connect(address, 0)
 	return conn, err
 }
@@ -38,6 +40,8 @@ func DialTimeout(address string, timeout time.Duration) (*Conn, error) {
         conn := &Conn{
 		RequestTimeout: 10 * time.Second,
         }
+	conn.mutex.Lock()
+        defer conn.mutex.Unlock()
         err := conn.connect(address, timeout)
         return conn, err
 }
@@ -53,6 +57,11 @@ func (c *Conn) Close() error {
 	return c.tcpConn.Close()
 }
 
+// IsConnected returns true if connection is okay
+func (c *Conn) IsConnected() bool {
+	return c.state == connStateConnected
+}
+
 // Lock locks the whole connection
 func (c *Conn) Lock() {
 	c.mutex.Lock()
@@ -64,9 +73,7 @@ func (c *Conn) Unlock() {
 }
 
 func (c *Conn) connect(address string, timeout time.Duration) error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	if c.state == connStateConnected || c.state == connStateReconnecting {
+	if c.state == connStateConnected {
 		return nil
 	}
 	var err error
@@ -96,14 +103,10 @@ func (c *Conn) reconnect() {
 	}
 	c.tcpConn.Close()
 	c.state = connStateReconnecting
-	go c.doReconnect()
-}
-
-func (c *Conn) doReconnect() {
 	for {
-		if err := c.connect(c.address, 0); err == nil {
+                if err := c.connect(c.address, 0); err == nil {
 			break
-		}
-		time.Sleep(2 * time.Second)
-	}
+                }
+                time.Sleep(2 * time.Second)
+        }
 }
