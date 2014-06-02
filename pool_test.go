@@ -11,7 +11,10 @@ func TestPool(t *testing.T) {
 	}
 	defer conn.Close()
 
-	pool := &Pool{}
+	pool := &Pool{
+		InitialConn: 5,
+		MaximumConn: 5,
+	}
 	err = pool.Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
@@ -67,7 +70,10 @@ func TestPool(t *testing.T) {
 }
 
 func TestPoolClose(t *testing.T) {
-	pool := &Pool{}
+	pool := &Pool{
+		InitialConn: 20,
+		MaximumConn: 20,
+	}
 	err := pool.Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
@@ -88,7 +94,7 @@ func TestPoolClose(t *testing.T) {
 			}
 		}()
 	}
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 20; i++ {
 		<- ready
 	}
 	pool.Close()

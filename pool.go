@@ -113,7 +113,6 @@ func (p *Pool) Release(conn *Conn) {
 	if p.closed {
 		return
 	}
-	p.unusableNumberOfConn++
 	go p.pushBack(conn)
 }
 
@@ -144,14 +143,20 @@ func (p *Pool) connect(timeout time.Duration) (err error) {
 }
 
 func (p *Pool) pushBack(conn *Conn) {
+	markedUnusable := false
 	for {
 		if conn.state == connStateConnected {
 			p.mutex.Lock()
 			p.l.PushBack(conn)
-			p.unusableNumberOfConn--
+			if markedUnusable {
+				p.unusableNumberOfConn--
+			}
 			p.cond.Signal()
 			p.mutex.Unlock()
 			break
+		} else if !markedUnusable {
+			markedUnusable = true
+			p.unusableNumberOfConn++
 		}
 		time.Sleep(2 * time.Second)
 	}
