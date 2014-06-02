@@ -83,6 +83,11 @@ The following slice element types are supported:
   - FixInt and VarInt
   - *gore.Pair for converting map data from HGETALL or ZRANGE WITHSCORES
 
+Reply returns from HGETALL or SENTINEL master can be converted into a map
+using Map:
+
+  m, err:= rep.Map()
+
 Pipeline
 
 Gore supports pipelining using gore.Pipeline:

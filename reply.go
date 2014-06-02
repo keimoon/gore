@@ -254,6 +254,34 @@ func (r *Reply) Slice(s interface{}) error {
 	return nil
 }
 
+// Map converts the reply into a map[string]string.
+// It will return error unless the reply is an array reply from HGETALL,
+// or SENTINEL master
+func (r *Reply) Map() (map[string]string, error) {
+	if r.IsNil() {
+		return nil, ErrNil
+	}
+	if !r.IsArray() {
+		return nil, ErrType
+	}
+	if len(r.arrayValue)%2 != 0 {
+		return nil, ErrType
+	}
+	m := make(map[string]string)
+	for i := 0; i < len(r.arrayValue)/2; i++ {
+		first, err := r.arrayValue[2*i].String()
+		if err != nil {
+			continue
+		}
+		second, err := r.arrayValue[2*i+1].String()
+		if err != nil && err != ErrNil {
+			continue
+		}
+		m[first] = second
+	}
+	return m, nil
+}
+
 // Error returns error message
 func (r *Reply) Error() (string, error) {
 	if r.Type() != ReplyError {
@@ -301,10 +329,10 @@ func (r *Reply) IsError() bool {
 func Receive(conn *Conn) (r *Reply, err error) {
 	conn.Lock()
 	defer func() {
-                conn.Unlock()
-                if err != nil {
-                        conn.fail()
-                }
+		conn.Unlock()
+		if err != nil {
+			conn.fail()
+		}
 	}()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetReadDeadline(time.Now().Add(conn.RequestTimeout))

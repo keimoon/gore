@@ -35,6 +35,8 @@ type Subscriptions struct {
 	lock           sync.Mutex
 	ready          bool
 	readyChannel   chan bool
+	// Sentinel will set this to true to handle read error from sentinel server.
+	throwError bool
 }
 
 // NewSubscriptions returns new Subscriptions
@@ -46,6 +48,7 @@ func NewSubscriptions(conn *Conn) *Subscriptions {
 		messageChannel: make(chan *Message, 100),
 		ready:          true,
 		readyChannel:   make(chan bool, 1),
+		throwError:     false,
 	}
 	go s.receive()
 	return s
@@ -114,7 +117,12 @@ func (s *Subscriptions) receive() {
 		for {
 			rep, err := readReply(s.conn)
 			if err != nil {
+				if s.throwError {
+					s.messageChannel <- nil
+					return
+				}
 				s.ready = false
+				go s.resubscribe()
 				break
 			}
 			if !rep.IsArray() {
@@ -155,10 +163,7 @@ func (s *Subscriptions) do(command string, channel ...string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	err := NewCommand(command, s.makeArgs(channel...)...).Send(s.conn)
-	if err != nil {
-		s.ready = false
-		go s.resubscribe()
-	} else {
+	if err == nil {
 		switch {
 		case command[0] == 'S':
 			for _, ch := range channel {
@@ -211,8 +216,9 @@ func (s *Subscriptions) resubscribe() {
 		}
 		err = NewCommand("PSUBSCRIBE", s.makeArgs(pchannels...)...).Send(s.conn)
 		if err != nil {
-                        continue
-                }
+			continue
+		}
+		break
 	}
 	s.ready = true
 	s.readyChannel <- true

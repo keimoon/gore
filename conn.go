@@ -21,29 +21,30 @@ type Conn struct {
 	mutex          sync.Mutex
 	rb             *bufio.Reader
 	wb             *bufio.Writer
+	sentinel       bool
 	RequestTimeout time.Duration
 }
 
 // Dial opens a TCP connection with a redis server.
 func Dial(address string) (*Conn, error) {
 	conn := &Conn{
-		RequestTimeout: 10 * time.Second,
+		RequestTimeout: time.Duration(Config.RequestTimeout) * time.Second,
 	}
 	conn.mutex.Lock()
-        defer conn.mutex.Unlock()
+	defer conn.mutex.Unlock()
 	err := conn.connect(address, 0)
 	return conn, err
 }
 
 // DialTimeout opens a TCP connection with a redis server with a connection timeout
 func DialTimeout(address string, timeout time.Duration) (*Conn, error) {
-        conn := &Conn{
-		RequestTimeout: 10 * time.Second,
-        }
+	conn := &Conn{
+		RequestTimeout: time.Duration(Config.RequestTimeout) * time.Second,
+	}
 	conn.mutex.Lock()
-        defer conn.mutex.Unlock()
-        err := conn.connect(address, timeout)
-        return conn, err
+	defer conn.mutex.Unlock()
+	err := conn.connect(address, timeout)
+	return conn, err
 }
 
 // Close closes the connection
@@ -92,21 +93,19 @@ func (c *Conn) connect(address string, timeout time.Duration) error {
 }
 
 func (c *Conn) fail() {
-	c.reconnect()
-}
-
-func (c *Conn) reconnect() {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	if c.state == connStateReconnecting {
-		return
+	if !c.sentinel {
+		c.mutex.Lock()
+		defer c.mutex.Unlock()
+		if c.state == connStateReconnecting {
+			return
+		}
+		c.tcpConn.Close()
+		c.state = connStateReconnecting
+		for {
+			if err := c.connect(c.address, 0); err == nil {
+				break
+			}
+			time.Sleep(time.Duration(Config.ReconnectTime) * time.Second)
+		}
 	}
-	c.tcpConn.Close()
-	c.state = connStateReconnecting
-	for {
-                if err := c.connect(c.address, 0); err == nil {
-			break
-                }
-                time.Sleep(2 * time.Second)
-        }
 }

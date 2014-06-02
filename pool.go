@@ -24,6 +24,7 @@ type Pool struct {
 	cond                 *sync.Cond
 	address              string
 	closed               bool
+	sentinel             bool
 }
 
 // Dial initializes connection from the pool to redis server.
@@ -34,10 +35,10 @@ func (p *Pool) Dial(address string) error {
 		p.RequestTimeout = 10 * time.Second
 	}
 	if p.InitialConn <= 0 {
-		p.InitialConn = 5
+		p.InitialConn = Config.PoolInitialSize
 	}
 	if p.MaximumConn <= 0 {
-		p.MaximumConn = 10
+		p.MaximumConn = Config.PoolMaximumSize
 	}
 	if p.MaximumConn < p.InitialConn {
 		p.MaximumConn = p.InitialConn
@@ -63,6 +64,7 @@ func (p *Pool) Close() {
 	}
 	p.l.Init()
 	p.currentNumberOfConn = p.l.Len()
+	p.unusableNumberOfConn = 0
 	p.cond.Broadcast()
 }
 
@@ -137,6 +139,7 @@ func (p *Pool) connect(timeout time.Duration) (err error) {
 		if err != nil {
 			return err
 		}
+		conn.sentinel = p.sentinel
 		p.l.PushBack(conn)
 	}
 	return nil
@@ -154,10 +157,24 @@ func (p *Pool) pushBack(conn *Conn) {
 			p.cond.Signal()
 			p.mutex.Unlock()
 			break
+		} else if p.sentinel {
+			// Give up this conn
+			conn.Close()
+			break
 		} else if !markedUnusable {
 			markedUnusable = true
 			p.unusableNumberOfConn++
 		}
 		time.Sleep(2 * time.Second)
 	}
+}
+
+func (p *Pool) sentinelGonnaGiveYouUp() {
+	for p.connect(time.Duration(Config.ConnectTimeout)*time.Second) != nil {
+	}
+	p.closed = false
+}
+
+func (p *Pool) sentinelGonnaLetYouDown() {
+	p.Close()
 }
