@@ -27,20 +27,27 @@ func NewSentinel() *Sentinel {
 	}
 }
 
-// AddServer adds new sentinel server. Only one sentinel server is active
+// AddServer adds new sentinel servers. Only one sentinel server is active
 // at any time. If this server fails, gore will connect to other sentinel
 // servers immediately.
 //
 // AddServer can be called at anytime, to add new server on the fly.
 // In production environment, you should always have at least 3 sentinel
 // servers up and running.
-func (s *Sentinel) AddServer(address string) {
+func (s *Sentinel) AddServer(addresses ...string) {
 	for _, server := range s.servers {
-		if server == address {
-			return
+		found := false
+		var address string
+		for _, address = range addresses {
+			if address == server {
+				found = true
+				break
+			}
+		}
+		if !found {
+			s.servers = append(s.servers, address)
 		}
 	}
-	s.servers = append(s.servers, address)
 }
 
 // Init connects to one sentinel server in the list. If it fails to connect,
