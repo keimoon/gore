@@ -1,5 +1,7 @@
 # Gore
 
+[![GoDoc](https://godoc.org/github.com/keimoon/gore?status.png)](http://godoc.org/github.com/keimoon/gore)
+
 Gore is a full feature Redis client for Go
 
 ## Features

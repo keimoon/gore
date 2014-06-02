@@ -207,5 +207,39 @@ with connection pool only.
   } else {
        // Other errors, transaction should be aborted
   }
+
+Sentinel
+
+Redis Sentinel is a system that monitors other Redis instance, notify application 
+when something is wrong with monitored Redis instance, and do automatic failover.
+Please note that Redis Sentinel is still in beta stage, and only supported fully
+in Redis version 2.8 and above. For more information about setting up Redis Sentinel,
+please refer to the official document at http://redis.io/topics/sentinel
+
+Using Redis Sentinel with gore is simple:
+
+  // First, you need to create a Sentinel object:
+  s := gore.NewSentinel()
+  // Add some Sentinel servers to this object.
+  // In production environment, you should have at least 3 Sentinel Servers
+  s.AddServer("127.0.0.1:26379")
+  s.AddServer("127.0.0.1:26380")
+  s.AddServer("127.0.0.1:26381")
+  // Initialize the Sentinel
+  err := s.Init()
+  if err != nil {
+      return
+  }
+  // Now, the Sentinel is ready, you can get a monitored pool of connection from the 
+  // sentinel by using one function:
+  pool, err := s.GetPool("mymaster")
+
+The name of the pool ("mymaster") must be an already monitored instance name, otherwise,
+the function will return ErrNil. The application also should not call GetPool function 
+repeatedly because internal locking may cause dropping in performance. It should assign
+and reuse the pool variable instead. Because the GetPool function is normally used when
+the application starts up, it will fail immediately if the redis instance is still down.
+Application can use a for loop and sleep to retry to connect.
+
 */
 package gore
