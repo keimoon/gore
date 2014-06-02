@@ -11,8 +11,8 @@ and [reply parsing](https://github.com/keimoon/gore/wiki/Reply)
 [LUA scripting](https://github.com/keimoon/gore/wiki/Script)
 * [Pubsub](https://github.com/keimoon/gore/wiki/Pubsub)
 * [Connection pool](https://github.com/keimoon/gore/wiki/Connection-pool)
-* Redis sentinel
-* Client implementation of sharding
+* [Redis sentinel](https://github.com/keimoon/gore/wiki/Sentinel)
+* Client implementation of [sharding](https://github.com/keimoon/gore/wiki/Sharding)
 
 ## Documentation
 
