@@ -19,6 +19,10 @@ var (
 	ErrTransactionAborted = errors.New("transaction aborted")
 	// ErrNil is for nil reply
 	ErrNil                = errors.New("nil value")
+	//ErrNotShard is returned when trying to connect with a cluster with no shard
+	ErrNoShard = errors.New("no shard")
+	// ErrNoKey is returned when sending command with no key to the cluster
+	ErrNoKey = errors.New("no key")
 	// ErrWrite is returned when connection cannot be written
 	ErrWrite              = errors.New("write error")
 	// ErrRead is returned when connection cannot be read

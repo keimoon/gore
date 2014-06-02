@@ -54,10 +54,10 @@ func (cmd *Command) Run(conn *Conn) (r *Reply, err error) {
 func (cmd *Command) Send(conn *Conn) (err error) {
 	conn.Lock()
 	defer func() {
-                conn.Unlock()
-                if err != nil {
-                        conn.fail()
-                }
+		conn.Unlock()
+		if err != nil {
+			conn.fail()
+		}
 	}()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetWriteDeadline(time.Now().Add(conn.RequestTimeout))
@@ -84,37 +84,41 @@ func (cmd *Command) writeCommand(conn *Conn) error {
 		return err
 	}
 	for _, arg := range cmd.args {
-		switch arg := arg.(type) {
-		case string:
-			err = writeString(arg, conn)
-		case []byte:
-			err = writeBytes(arg, conn)
-		case int:
-			err = writeString(strconv.FormatInt(int64(arg), 10), conn)
-		case int64:
-			err = writeString(strconv.FormatInt(arg, 10), conn)
-		case float64:
-			err = writeString(strconv.FormatFloat(arg, 'g', -1, 64), conn)
-		case FixInt:
-			err = writeBytes(arg.Bytes(), conn)
-		case VarInt:
-			err = writeBytes(arg.Bytes(), conn)
-		case bool:
-			if arg {
-				err = writeString("1", conn)
-			} else {
-				err = writeString("0", conn)
-			}
-		case nil:
-			err = writeString("", conn)
-		default:
-			err = writeString(fmt.Sprint(arg), conn)
-		}
+		err = writeBytes(convertString(arg), conn)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func convertString(arg interface{}) []byte {
+	switch arg := arg.(type) {
+	case string:
+		return []byte(arg)
+	case []byte:
+		return arg
+	case int:
+		return []byte(strconv.FormatInt(int64(arg), 10))
+	case int64:
+		return []byte(strconv.FormatInt(arg, 10))
+	case float64:
+		return []byte(strconv.FormatFloat(arg, 'g', -1, 64))
+	case FixInt:
+		return arg.Bytes()
+	case VarInt:
+		return arg.Bytes()
+	case bool:
+		if arg {
+			return []byte("1")
+		} else {
+			return []byte("0")
+		}
+	case nil:
+		return []byte("")
+	default:
+		return []byte(fmt.Sprint(arg))
+	}
 }
 
 func writeString(s string, conn *Conn) error {

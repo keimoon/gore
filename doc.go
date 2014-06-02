@@ -224,7 +224,7 @@ Using Redis Sentinel with gore is simple:
   // In production environment, you should have at least 3 Sentinel Servers
   s.AddServer("127.0.0.1:26379", "127.0.0.1:26380", "127.0.0.1:26381")
   // Initialize the Sentinel
-  err := s.Init()
+  err := s.Dial()
   if err != nil {
       return
   }

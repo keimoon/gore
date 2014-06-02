@@ -50,10 +50,10 @@ func (s *Sentinel) AddServer(addresses ...string) {
 	}
 }
 
-// Init connects to one sentinel server in the list. If it fails to connect,
+// Dial connects to one sentinel server in the list. If it fails to connect,
 // it moves to the next on the list. If all servers cannot be connected,
 // Init return error.
-func (s *Sentinel) Init() (err error) {
+func (s *Sentinel) Dial() (err error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if s.state != connStateNotConnected {
