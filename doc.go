@@ -254,7 +254,7 @@ Gore provides two ways to connect to a cluster.
 
 The first way is using Sentinel. All Redis instances in the same cluster should have the
 same prefix, and the suffix should be a number. For example: "mycluster1", "mycluster2",
-..., mycluster20. Using Sentinel, you can get a cluster relatively easy:
+..., "mycluster20". Using Sentinel, you can get a cluster relatively easy:
 
   s := NewSentinel()
   s.AddServer("127.0.0.1:26379", "127.0.0.1:26380", "127.0.0.1:26381")
