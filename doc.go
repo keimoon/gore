@@ -210,7 +210,7 @@ with connection pool only.
 
 Sentinel
 
-Redis Sentinel is a system that monitors other Redis instance, notify application 
+Redis Sentinel is a system that monitors other Redis instance, notify application
 when something is wrong with monitored Redis instance, and do automatic failover.
 Please note that Redis Sentinel is still in beta stage, and only supported fully
 in Redis version 2.8 and above. For more information about setting up Redis Sentinel,
@@ -228,16 +228,64 @@ Using Redis Sentinel with gore is simple:
   if err != nil {
       return
   }
-  // Now, the Sentinel is ready, you can get a monitored pool of connection from the 
+  // Now, the Sentinel is ready, you can get a monitored pool of connection from the
   // sentinel by using one function:
   pool, err := s.GetPool("mymaster")
 
 The name of the pool ("mymaster") must be an already monitored instance name, otherwise,
-the function will return ErrNil. The application also should not call GetPool function 
+the function will return ErrNil. The application also should not call GetPool function
 repeatedly because internal locking may cause dropping in performance. It should assign
 and reuse the pool variable instead. Because the GetPool function is normally used when
 the application starts up, it will fail immediately if the redis instance is still down.
 Application can use a for loop and sleep to retry to connect.
+
+Sharding
+
+Gore supports simple sharding strategy: a fixed number of Redis instances are grouped into
+"cluster", each instance holds a portion of the cluster keyset.
+
+When a single command needed to be execute on the cluster, gore will redirect the command
+to approriate instance based on the key. Gore makes sure that each key will be redirected
+to only one instance consistently. Because of the nature of the fixed-sharding, the number
+of Redis instances in the cluster should never change, and pipeline or transaction is not
+supported.
+
+Gore provides two ways to connect to a cluster.
+
+The first way is using Sentinel. All Redis instances in the same cluster should have the
+same prefix, and the suffix should be a number. For example: "mycluster1", "mycluster2",
+..., mycluster20. Using Sentinel, you can get a cluster relatively easy:
+
+  s := NewSentinel()
+  s.AddServer("127.0.0.1:26379", "127.0.0.1:26380", "127.0.0.1:26381")
+  err := s.Dial()
+  if err != nil {
+      return
+  }
+  c, err := s.GetCluster("mycluster")
+
+The second way is to add shard to a cluster manually:
+
+  c := NewCluster()
+  c.AddShard("127.0.0.1:6379", "127.0.0.1:6380")
+  err := c.Dial()
+  if err != nil {
+      return
+  }
+
+Using cluster
+
+A single command can be ran on the cluster with Execute:
+
+  rep, err := c.Execute(NewCommand("SET", "kirisame", "marisa"))
+  if err != nil || !rep.IsOk() {
+      return
+  }
+  rep, err := c.Execute(NewCommand("GET", "kirisame"))
+  if err != nil {
+      return
+  }
+  value, _ := rep.String() // value should be "marisa"
 
 */
 package gore
