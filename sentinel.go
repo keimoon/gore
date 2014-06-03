@@ -1,6 +1,7 @@
 package gore
 
 import (
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -35,19 +36,7 @@ func NewSentinel() *Sentinel {
 // In production environment, you should always have at least 3 sentinel
 // servers up and running.
 func (s *Sentinel) AddServer(addresses ...string) {
-	for _, server := range s.servers {
-		found := false
-		var address string
-		for _, address = range addresses {
-			if address == server {
-				found = true
-				break
-			}
-		}
-		if !found {
-			s.servers = append(s.servers, address)
-		}
-	}
+	s.servers = append(s.servers, addresses...)
 }
 
 // Dial connects to one sentinel server in the list. If it fails to connect,
@@ -113,6 +102,65 @@ func (s *Sentinel) GetPool(name string) (*Pool, error) {
 	s.instances[name] = ins
 	return ins.pool, nil
 }
+
+// GetCluster return a cluster monitored by the sentinel.
+// The name of the cluster will determine name of Redis instances.
+// For example, if the cluster name is "mycluster", the instances' name
+// maybe "mycluster1", "mycluster2", ...
+func (s *Sentinel) GetCluster(name string) (c *Cluster, err error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	rep, err := NewCommand("SENTINEL", "masters").Run(s.conn)
+	if err != nil {
+		return nil, err
+	}
+	replies, err := rep.Array()
+	if err != nil {
+		return nil, err
+	}
+	if len(replies) == 0 {
+		return nil, ErrNoShard
+	}
+	instances := make(map[string]*instance)
+	defer func() {
+		if err != nil {
+			for _, ins := range instances {
+				ins.pool.Close()
+			}
+		}
+	}()
+	for _, r := range replies {
+		master, err := r.Map()
+		if err != nil {
+			return nil, err
+		}
+		suffix := strings.TrimPrefix(master["name"], name)
+		if !suffixRegex.MatchString(suffix) {
+			continue
+		}
+		ins := &instance{
+			name:    master["name"],
+			address: master["ip"] + ":" + master["port"],
+			state:   connStateConnected,
+			pool:    &Pool{sentinel: true},
+		}
+		err = ins.pool.Dial(ins.address)
+		if err != nil {
+			return nil, err
+		}
+		instances[ins.name] = ins
+	}
+	c = NewCluster()
+	c.sentinel = true
+	for _, ins := range instances {
+		s.instances[ins.name] = ins
+		c.addresses = append(c.addresses, ins.address)
+		c.shards = append(c.shards, ins.pool)
+	}
+	return c, nil
+}
+
+var suffixRegex = regexp.MustCompile("^\\d+$")
 
 func (s *Sentinel) connect() (err error) {
 	for i, server := range s.servers {
