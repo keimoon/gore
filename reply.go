@@ -88,9 +88,9 @@ func (r *Reply) Bool() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if s == "1" {
+	if s == "1" || s == "true"{
 		return true, nil
-	} else if s == "0" {
+	} else if s == "0" || s == "false" {
 		return false, nil
 	} else {
 		return false, ErrConvert
