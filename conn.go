@@ -95,17 +95,26 @@ func (c *Conn) connect(address string, timeout time.Duration) error {
 func (c *Conn) fail() {
 	if !c.sentinel {
 		c.mutex.Lock()
-		defer c.mutex.Unlock()
 		if c.state == connStateReconnecting {
+			c.mutex.Unlock()
 			return
 		}
 		c.tcpConn.Close()
 		c.state = connStateReconnecting
-		for {
-			if err := c.connect(c.address, 0); err == nil {
-				break
-			}
-			time.Sleep(time.Duration(Config.ReconnectTime) * time.Second)
-		}
+		c.mutex.Unlock()
+		go c.reconnect()
 	}
+}
+
+func (c *Conn) reconnect() {
+	for {
+		c.mutex.Lock()
+		if err := c.connect(c.address, 0); err == nil {
+			c.mutex.Unlock()
+			break
+		}
+		c.mutex.Unlock()
+		time.Sleep(time.Duration(Config.ReconnectTime) * time.Second)
+	}
+
 }

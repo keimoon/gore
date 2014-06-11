@@ -23,10 +23,11 @@ func NewCommand(name string, args ...interface{}) *Command {
 
 // Run sends command to redis
 func (cmd *Command) Run(conn *Conn) (r *Reply, err error) {
-	if conn.state != connStateConnected {
-		return nil, ErrNotConnected
-	}
 	conn.Lock()
+	if conn.state != connStateConnected {
+		conn.Unlock()
+                return nil, ErrNotConnected
+        }
 	defer func() {
 		conn.Unlock()
 		if err != nil {
