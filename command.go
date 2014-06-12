@@ -26,12 +26,15 @@ func (cmd *Command) Run(conn *Conn) (r *Reply, err error) {
 	conn.Lock()
 	if conn.state != connStateConnected {
 		conn.Unlock()
-                return nil, ErrNotConnected
-        }
+		return nil, ErrNotConnected
+	}
 	defer func() {
-		conn.Unlock()
 		if err != nil {
+			conn.state = connStateNotConnected
+			conn.Unlock()
 			conn.fail()
+		} else {
+			conn.Unlock()
 		}
 	}()
 	if conn.RequestTimeout != 0 {
@@ -55,10 +58,13 @@ func (cmd *Command) Run(conn *Conn) (r *Reply, err error) {
 func (cmd *Command) Send(conn *Conn) (err error) {
 	conn.Lock()
 	defer func() {
-		conn.Unlock()
 		if err != nil {
-			conn.fail()
-		}
+			conn.state = connStateNotConnected
+			conn.Unlock()
+                        conn.fail()
+                } else {
+			conn.Unlock()
+                }
 	}()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetWriteDeadline(time.Now().Add(conn.RequestTimeout))

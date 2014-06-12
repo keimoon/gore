@@ -329,10 +329,13 @@ func (r *Reply) IsError() bool {
 func Receive(conn *Conn) (r *Reply, err error) {
 	conn.Lock()
 	defer func() {
-		conn.Unlock()
 		if err != nil {
-			conn.fail()
-		}
+			conn.state = connStateNotConnected
+			conn.Unlock()
+                        conn.fail()
+                } else {
+			conn.Unlock()
+                }
 	}()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetReadDeadline(time.Now().Add(conn.RequestTimeout))
