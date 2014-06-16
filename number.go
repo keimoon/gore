@@ -44,19 +44,17 @@ type VarInt int64
 
 // Bytes converts a VarInt to a byte array
 func (x VarInt) Bytes() []byte {
-	b := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	if x >= 0 {
-		b[0] = 0
-	} else {
-		b[0] = 1
-		x = -x
+	b := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0}
+	ux := uint64(x) << 1
+	if x < 0 {
+		ux = ^ux
 	}
-	pos := 1
+	pos := 0
 	for {
-		b[pos] = byte((x & 0x7F) | 0x80)
+		b[pos] = byte((ux & 0x7F) | 0x80)
 		pos++
-		if x >= 128 || x < -127 {
-			x >>= 7
+		if ux >= 128 {
+			ux >>= 7
 		} else {
 			break
 		}
@@ -67,18 +65,19 @@ func (x VarInt) Bytes() []byte {
 
 // ToVarInt converts a base-128 byte array to a int64
 func ToVarInt(b []byte) (int64, error) {
-	if len(b) < 2 {
+	if len(b) < 1 {
 		return 0, ErrNumberFormat
 	}
-	var x int64
-	for i := range b[1:] {
-		x += int64((b[i+1] & 0x7F)) << uint(7*i)
-		if b[i+1] < 128 {
+	var ux uint64
+	for i := range b {
+		ux += uint64((b[i] & 0x7F)) << uint(7*i)
+		if b[i] < 128 {
 			break
 		}
 	}
-	if b[0] == 1 {
-		x = -x
+	x := int64(ux >> 1)
+	if ux&1 != 0 {
+		x = ^x
 	}
 	return x, nil
 }
