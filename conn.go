@@ -107,6 +107,7 @@ func (c *Conn) fail() {
 }
 
 func (c *Conn) reconnect() {
+	sleepTime := Config.ReconnectTime
 	for {
 		c.mutex.Lock()
 		if err := c.connect(c.address, 0); err == nil {
@@ -114,7 +115,10 @@ func (c *Conn) reconnect() {
 			break
 		}
 		c.mutex.Unlock()
-		time.Sleep(time.Duration(Config.ReconnectTime) * time.Second)
+		time.Sleep(time.Duration(sleepTime) * time.Second)
+		if sleepTime < 30 {
+			sleepTime += 2
+		}
 	}
 
 }

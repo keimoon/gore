@@ -44,7 +44,7 @@ type VarInt int64
 
 // Bytes converts a VarInt to a byte array
 func (x VarInt) Bytes() []byte {
-	b := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0}
+	b := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0} // 9.14 bytes are needed
 	ux := uint64(x) << 1
 	if x < 0 {
 		ux = ^ux

@@ -213,12 +213,16 @@ func (s *Sentinel) reconnect() {
 	s.subs.Close()
 	s.subConn.Close()
 	s.conn.Close()
+	sleepTime := Config.ReconnectTime
 	for {
 		err := s.connect()
 		if err == nil {
 			break
 		}
-		time.Sleep(time.Duration(Config.ReconnectTime) * time.Second)
+		time.Sleep(time.Duration(sleepTime) * time.Second)
+		if sleepTime < 30 {
+			sleepTime += 2
+		}
 	}
 }
 
@@ -267,7 +271,7 @@ func (s *Sentinel) getInstanceAddress(name string) string {
 	for {
 		rep, err := NewCommand("SENTINEL", "get-master-addr-by-name", name).Run(s.conn)
 		if err != nil {
-			time.Sleep(time.Duration(Config.ReconnectTime) * time.Second)
+			time.Sleep(2 * time.Second)
 			continue
 		}
 		if !rep.IsArray() {
