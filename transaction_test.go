@@ -44,7 +44,7 @@ func TestTransaction(t *testing.T) {
 	}
 }
 
-func TestTransactionGoroutint(t *testing.T) {
+func TestTransactionGoroutine(t *testing.T) {
 	c := make(chan bool, 20)
 
 	for i := 0; i < 50; i++ {

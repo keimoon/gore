@@ -23,6 +23,7 @@ type Conn struct {
 	wb             *bufio.Writer
 	sentinel       bool
 	RequestTimeout time.Duration
+	isClosed       bool
 }
 
 // Dial opens a TCP connection with a redis server.
@@ -51,6 +52,7 @@ func DialTimeout(address string, timeout time.Duration) (*Conn, error) {
 func (c *Conn) Close() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
+	c.isClosed = true
 	if c.state == connStateNotConnected {
 		return nil
 	}
@@ -110,6 +112,10 @@ func (c *Conn) reconnect() {
 	sleepTime := Config.ReconnectTime
 	for {
 		c.mutex.Lock()
+		if c.isClosed {
+			c.mutex.Unlock()
+			break
+		}
 		if err := c.connect(c.address, 0); err == nil {
 			c.mutex.Unlock()
 			break
