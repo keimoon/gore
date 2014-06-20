@@ -38,6 +38,8 @@ func NewSentinel() *Sentinel {
 // In production environment, you should always have at least 3 sentinel
 // servers up and running.
 func (s *Sentinel) AddServer(addresses ...string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	s.servers = append(s.servers, addresses...)
 }
 
