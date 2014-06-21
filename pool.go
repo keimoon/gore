@@ -68,6 +68,18 @@ func (p *Pool) Close() {
 	p.cond.Broadcast()
 }
 
+// IsConnected returns pool connection status. This function
+// only works when sentinel is enabled. When sentinel is disabled, false
+// positive may occur.
+func (p *Pool) IsConnected() bool {
+	return !p.closed && p.l.Len() > 0
+}
+
+// GetAddresss returns pool address
+func (p *Pool) GetAddress() string {
+	return p.address
+}
+
 // Acquire returns a usable, exclusive connection for the goroutine.
 // If this function return a nil connection, application can check the
 // error to know whether there is really an error or it is because the pool was closed.

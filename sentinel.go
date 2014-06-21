@@ -158,7 +158,7 @@ func (s *Sentinel) RemoveInstance(name string) error {
 
 // SetOption sets option for a Redis instance
 // This method can be called before Dial()
-func (s *Sentinel) SetOption(name, option, value string) error {
+func (s *Sentinel) SetOption(name, option string, value interface{}) error {
 	if len(s.servers) == 0 {
 		return ErrNotConnected
 	}

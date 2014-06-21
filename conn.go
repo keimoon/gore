@@ -65,6 +65,11 @@ func (c *Conn) IsConnected() bool {
 	return c.state == connStateConnected
 }
 
+// GetAddress returns connection address
+func (c *Conn) GetAddress() string {
+	return c.address
+}
+
 // Lock locks the whole connection
 func (c *Conn) Lock() {
 	c.mutex.Lock()
