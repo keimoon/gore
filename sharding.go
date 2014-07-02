@@ -3,10 +3,15 @@ package gore
 // Cluster consists of fix number of shards, with each shard holds a portion
 // of the keyset. Cluster can be created by adding shards, or using sentinel.
 type Cluster struct {
-	addresses     []string
+	addresses     []*addressWithPassword
 	shards        []*Pool
 	sentinel      bool
 	ShardStrategy func(string, int) int
+}
+
+type addressWithPassword struct {
+	address  string
+	password string
 }
 
 // NewCluster creates new cluster. You must add shards to this cluster manually
@@ -20,7 +25,16 @@ func NewCluster() *Cluster {
 // AddShard add a list of shards to the cluster.
 func (c *Cluster) AddShard(addresses ...string) {
 	if !c.sentinel {
-		c.addresses = append(c.addresses, addresses...)
+		for _, address := range addresses {
+			c.addresses = append(c.addresses, &addressWithPassword{address, ""})
+		}
+	}
+}
+
+// AddShardWithPassword add a password-protected shard
+func (c *Cluster) AddShardWithPassword(address, password string) {
+	if !c.sentinel {
+		c.addresses = append(c.addresses, &addressWithPassword{address, password})
 	}
 }
 
@@ -41,8 +55,8 @@ func (c *Cluster) Dial() (err error) {
 		}
 	}()
 	for _, address := range c.addresses {
-		pool := &Pool{}
-		err = pool.Dial(address)
+		pool := &Pool{Password: address.password}
+		err = pool.Dial(address.address)
 		if err != nil {
 			return err
 		}

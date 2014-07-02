@@ -24,6 +24,7 @@ type Conn struct {
 	sentinel       bool
 	RequestTimeout time.Duration
 	isClosed       bool
+	password       string
 }
 
 // Dial opens a TCP connection with a redis server.
@@ -46,6 +47,22 @@ func DialTimeout(address string, timeout time.Duration) (*Conn, error) {
 	defer conn.mutex.Unlock()
 	err := conn.connect(address, timeout)
 	return conn, err
+}
+
+// Auth makes authentication with redis server
+func (c *Conn) Auth(password string) error {
+	c.password = password
+	if c.password == "" {
+		return nil
+	}
+	rep, err := NewCommand("AUTH", password).Run(c)
+	if err != nil {
+		return err
+	}
+	if !rep.IsOk() {
+		return ErrAuth
+	}
+	return nil
 }
 
 // Close closes the connection
@@ -131,5 +148,7 @@ func (c *Conn) reconnect() {
 			sleepTime += 2
 		}
 	}
-
+	if c.password != "" {
+		c.Auth(c.password)
+	}
 }

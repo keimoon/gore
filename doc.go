@@ -208,6 +208,27 @@ with connection pool only.
        // Other errors, transaction should be aborted
   }
 
+Authentication
+
+Gore supports Redis authentication in single connection, pool, sentinel.
+
+Authentication with a single connection can be done by sending "AUTH" command to redis
+server as normal, but this can be trouble some when the server is down, and is reconnected
+after that. To deal with this problem, gore provides conn.Auth() method:
+
+  conn.Auth("secret password")
+
+This method should be called when the connection is initialized. By calling Auth(), when 
+gore tries to reconnect, is will also attempt to send AUTH command to redis server right
+after the connection is made.
+
+To configure Auth password with gore.Pool, you can set pool.Password before calling pool.Dial().
+Like gore.Conn, gore.Pool also automatically send AUTH command when reconnected.
+
+If you are using sentinel to retrieve Pool or Cluster, instead of using GetPool or GetCluster method,
+you can use GetPoolWithPassword or GetClusterWithPassword to connect with a password-protected
+pool/cluster
+
 Sentinel
 
 Redis Sentinel is a system that monitors other Redis instance, notify application

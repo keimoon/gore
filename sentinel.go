@@ -69,6 +69,15 @@ func (s *Sentinel) Close() {
 // or the redis server is currently dead, or the redis server cannot be connected
 // (for example: firewall issues).
 func (s *Sentinel) GetPool(name string) (*Pool, error) {
+	return s.getPool(name, "")
+}
+
+// GetPoolWithPassword returns a pool of connection to a password-protected instance
+func (s *Sentinel) GetPoolWithPassword(name string, password string) (*Pool, error) {
+	return s.getPool(name, password)
+}
+
+func (s *Sentinel) getPool(name string, password string) (*Pool, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if ins, ok := s.instances[name]; ok {
@@ -95,7 +104,7 @@ func (s *Sentinel) GetPool(name string) (*Pool, error) {
 		name:    name,
 		address: master["ip"] + ":" + master["port"],
 		state:   connStateConnected,
-		pool:    &Pool{sentinel: true},
+		pool:    &Pool{sentinel: true, Password: password},
 	}
 	err = ins.pool.Dial(ins.address)
 	if err != nil {
@@ -105,11 +114,20 @@ func (s *Sentinel) GetPool(name string) (*Pool, error) {
 	return ins.pool, nil
 }
 
-// GetCluster return a cluster monitored by the sentinel.
+// GetCluster returns a cluster monitored by the sentinel.
 // The name of the cluster will determine name of Redis instances.
 // For example, if the cluster name is "mycluster", the instances' name
 // maybe "mycluster1", "mycluster2", ...
 func (s *Sentinel) GetCluster(name string) (c *Cluster, err error) {
+	return s.getCluster(name, "")
+}
+
+// GetClusterWithPassword returns a password-protected cluster monitored by the sentinel.
+func (s *Sentinel) GetClusterWithPassword(name string, password string) (c *Cluster, err error) {
+	return s.getCluster(name, password)
+}
+
+func (s *Sentinel) getCluster(name string, password string) (c *Cluster, err error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	rep, err := NewCommand("SENTINEL", "masters").Run(s.conn)
@@ -144,7 +162,7 @@ func (s *Sentinel) GetCluster(name string) (c *Cluster, err error) {
 			name:    master["name"],
 			address: master["ip"] + ":" + master["port"],
 			state:   connStateConnected,
-			pool:    &Pool{sentinel: true},
+			pool:    &Pool{sentinel: true, Password: password},
 		}
 		err = ins.pool.Dial(ins.address)
 		if err != nil {
@@ -156,7 +174,7 @@ func (s *Sentinel) GetCluster(name string) (c *Cluster, err error) {
 	c.sentinel = true
 	for _, ins := range instances {
 		s.instances[ins.name] = ins
-		c.addresses = append(c.addresses, ins.address)
+		c.addresses = append(c.addresses, &addressWithPassword{ins.address, password})
 		c.shards = append(c.shards, ins.pool)
 	}
 	return c, nil

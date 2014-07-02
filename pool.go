@@ -16,6 +16,8 @@ type Pool struct {
 	InitialConn int
 	// Maximum number of connection to open
 	MaximumConn int
+	// Password to send after connection is opened
+	Password string
 
 	l                    *list.List
 	currentNumberOfConn  int
@@ -150,6 +152,13 @@ func (p *Pool) connect(timeout time.Duration) (err error) {
 		conn, err := DialTimeout(p.address, timeout)
 		if err != nil {
 			return err
+		}
+		if p.Password != "" {
+			err = conn.Auth(p.Password)
+			if err != nil {
+				conn.Close()
+				return err
+			}
 		}
 		conn.sentinel = p.sentinel
 		p.l.PushBack(conn)
