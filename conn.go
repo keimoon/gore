@@ -70,7 +70,7 @@ func (c *Conn) Close() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.isClosed = true
-	if c.state == connStateNotConnected {
+	if c.state == connStateNotConnected || c.tcpConn == nil {
 		return nil
 	}
 	c.state = connStateNotConnected
