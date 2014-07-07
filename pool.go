@@ -77,7 +77,7 @@ func (p *Pool) IsConnected() bool {
 	return !p.closed && p.l.Len() > 0
 }
 
-// GetAddresss returns pool address
+// GetAddress returns pool address
 func (p *Pool) GetAddress() string {
 	return p.address
 }

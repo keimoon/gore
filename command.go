@@ -118,9 +118,8 @@ func convertString(arg interface{}) []byte {
 	case bool:
 		if arg {
 			return []byte("1")
-		} else {
-			return []byte("0")
 		}
+		return []byte("0")
 	case nil:
 		return []byte("")
 	default:
