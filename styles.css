@@ -48,6 +48,10 @@ a:hover {
 	padding-left: 10px;
 	padding-right: 10px;
 	clear: both;
+	display: -webkit-flex;
+    display: flex;
+    -webkit-flex-flow: row wrap;
+    flex-flow: row wrap;
 }
 
 .footer {
@@ -68,6 +72,12 @@ a:hover {
 .grid-2 {
 	float: left;
 	width: 50%;
+}
+
+@media (max-width: 600px) {
+	.grid-2, .grid-3 {
+		width: 100%;
+	}
 }
 
 h3 {
