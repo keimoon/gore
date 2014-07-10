@@ -50,6 +50,11 @@ a:hover {
 	clear: both;
 }
 
+.footer {
+	margin-bottom: 60px;
+	clear: both;
+}
+
 .grid-3 {
 	float: left;
 	width: 33.33333%;
@@ -75,4 +80,29 @@ h3 {
 	border: 1px solid #ddd;
 	padding: 10px 15px;
 	margin: 10px;
+	font-family: 'Courier New';
+	font-size: 13px;
+	white-space: pre-wrap;
+}
+
+.code .func {
+      font-weight: bold;
+}
+
+.code .string {
+      color: #e65100;
+}
+
+.code .keyword {
+      font-weight: bold;
+      color: #5677fc;
+}
+
+.code .comment {
+      color: #607d8b;
+}
+
+.code .type {
+      font-weight: bold;
+      color: #0a7e07;
 }

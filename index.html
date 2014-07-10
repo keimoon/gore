@@ -1,61 +1,158 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Gore - A full feature redis client for Go</title>
-	<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.1/normalize.min.css">
-	<link rel="stylesheet" href="gh-fork-ribbon.css">
-    <!--[if lt IE 9]>
-        <link rel="stylesheet" href="gh-fork-ribbon.ie.css">
-    <![endif]-->
-	<link rel="stylesheet" href="styles.css">
+  <title>Gore - A full feature redis client for Go</title>
+  <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.1/normalize.min.css">
+  <link rel="stylesheet" href="gh-fork-ribbon.css">
+  <!--[if lt IE 9]>
+      <link rel="stylesheet" href="gh-fork-ribbon.ie.css">
+      <![endif]-->
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-	<!-- TOP RIGHT RIBBON: START COPYING HERE -->
-    <div class="github-fork-ribbon-wrapper right">
-        <div class="github-fork-ribbon">
-            <a href="https://github.com/keimoon/gore">Fork me on GitHub</a>
-        </div>
+  <div class="github-fork-ribbon-wrapper right">
+    <div class="github-fork-ribbon">
+      <a href="https://github.com/keimoon/gore">Fork me on GitHub</a>
     </div>
-	<div class="header">
-		<h1>Gore</h1>
-		<h2>A full feature Redis client for Go</h2>
-		<div class="logo"><img src="gopherbw.png"></div>
-	</div>
-	<div class="container">
-		<div class="grid-3">
-			<h3>Features</h3>
-			<ul>
-				<li>Convenient <a href="#">command building</a> and <a href="#">reply parsing</a></li>
-				<li>Pipeline, multi-exec, LUA scripting</li>
-				<li>Pubsub</li>
-				<li>Connection pool</li>
-			</ul>
-		</div>
-		<div class="grid-3">
-			<h3>Documentation</h3>	
-			<ul>
-				<li><a href="#">API Document</a></li>
-				<li><a href="#">Guides</a></li>
-			</ul>
-		</div>
-		<div class="grid-3">
-			<h3>Installation</h3>
-			<div class="code">go get github.com/keimoon/gore</div>
-		</div>
-	</div>
-	<div class="container">
-		<div class="grid-3">
-			<h3>Code here</h3>	
-			<div class="code"></div>		
-		</div>
-		<div class="grid-3">
-			<h3>Code here</h3>	
-			<div class="code"></div>		
-		</div>
-		<div class="grid-3">
-			<h3>Code here</h3>	
-			<div class="code"></div>		
-		</div>
-	</div>
+  </div>
+  <div class="header">
+    <h1>Gore</h1>
+    <h2>A full feature Redis client for Go</h2>
+    <div class="logo"><img src="gopherbw.png"></div>
+  </div>
+  <div class="container">
+    <div class="grid-3">
+      <h3>Features</h3>
+      <ul>
+	<li>Convenient <a href="https://github.com/keimoon/gore/wiki/Connection-and-Command">command building</a>
+	  and <a href="https://github.com/keimoon/gore/wiki/Reply">reply parsing</a></li>
+	<li>
+	  <a href="https://github.com/keimoon/gore/wiki/Pipeline">Pipeline</a>,
+	  <a href="https://github.com/keimoon/gore/wiki/Transaction">multi-exec</a>,
+	  <a href="https://github.com/keimoon/gore/wiki/Script">LUA scripting</a>
+	</li>
+	<li><a href="https://github.com/keimoon/gore/wiki/Pubsub">Pubsub</a></li>
+	<li><a href="https://github.com/keimoon/gore/wiki/Connection-pool">Connection pool</a></li>
+	<li><a href="https://github.com/keimoon/gore/wiki/Sentinel">Sentinel</a></li>
+	<li>Client implementation of <a href="https://github.com/keimoon/gore/wiki/Sharding">sharding</a></li>
+      </ul>
+    </div>
+    <div class="grid-3">
+      <h3>Documentation</h3>
+      <ul>
+	<li><a href="http://godoc.org/github.com/keimoon/gore">API Document</a></li>
+	<li><a href="https://github.com/keimoon/gore/wiki">Guides</a></li>
+      </ul>
+    </div>
+    <div class="grid-3">
+      <h3>Installation</h3>
+      <div class="code">go get github.com/keimoon/gore</div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="grid-2">
+      <h3>Example: Simple</h3>
+      <div class="code">conn, err := gore.<span class="func">Dial</span>(<span class="string">"localhost:6379"</span>)
+<span class="keyword">defer</span> conn.<span class="func">Close</span>()
+rep, err := gore.<span class="func">NewCommand</span>(<span class="string">"GET"</span>, <span class="string">"marisa"</span>).<span class="func">Run</span>(conn)
+val, err := rep.<span class="func">String</span>()</div>
+    </div>
+
+    <div class="grid-2">
+      <h3>Example: Pipeline</h3>
+      <div class="code">p := gore.<span class="func">NewPipeline</span>()
+p.<span class="func">Add</span>(gore.<span class="func">NewCommand</span>(<span class="string">"SET"</span>, <span class="string">"kirisame"</span>, <span class="string">"marisa"</span>))
+p.<span class="func">Add</span>(gore.<span class="func">NewCommand</span>(<span class="string">"SET"</span>, <span class="string">"alice"</span>, <span class="string">"margatroid"</span>))
+replies, _ := p.<span class="func">Run</span>(conn)
+for _, r := <span class="keyword">range</span> replies {
+	<span class="comment">// Deal with individual reply here</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="grid-2">
+      <h3>Example: Connection pool</h3>
+      <div class="code">pool := &gore.<span class="type">Pool</span>{
+	InitialConn: 5,
+	MaximumConn: 10,
+}
+err := pool.<span class="func">Dial</span>(<span class="string">"localhost:6379"</span>)
+conn, err := pool.<span class="func">Acquire()</span>
+<span class="keyword">defer</span> pool.<span class="func">Release</span>(conn)</div>
+    </div>
+    <div class="grid-2">
+      <h3>Example: Transaction</h3>
+      <div class="code">conn, err := pool.<span class="func">Acquire()</span>
+<span class="keyword">defer</span> pool.<span class="func">Release</span>(conn)
+tr := gore.<span class="func">NewTransaction</span>(conn)
+tr.<span class="func">Watch</span>(<span class="string">"a key"</span>)
+tr.<span class="func">Watch</span>(<span class="string">"another key"</span>)
+rep, _ := <span class="func">NewCommand</span>(<span class="string">"GET"</span>, <span class="string">"a key"</span>).<span class="func">Run</span>(conn)
+value, _ := rep.<span class="func">Int</span>()
+tr.<span class="func">Add</span>(<span class="func">NewCommand</span>(<span class="string">"SET"</span>, <span class="string">"a key"</span>, value + 1))
+_, err := tr.<span class="func">Commit</span>()
+<span class="keyword">if</span> err == <span class="keyword">nil</span> {
+       <span class="comment">// Transaction OK!!!</span>
+} <span class="keyword">else if</span> err == gore.<span class="type">ErrKeyChanged</span> {
+       <span class="comment">// Watched key has been changed, </span>
+       <span class="comment">// transaction should be started over. </span>
+} <span class="keyword">else</span> {
+       <span class="comment">// Other errors, transaction should be </span>
+       <span class="comment">// aborted </span>
+}</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="grid-2">
+      <h3>Example: Script</h3>
+      <div class="code">s := gore.<span class="func">NewScript</span>()
+s.<span class="func">SetBody</span>(<span class="string">"return redis.call('SET', KEYS[1], ARGV[1])"</span>)
+rep, err := s.<span class="func">Execute</span>(conn, 1, <span class="string">"kirisame"</span>, <span class="string">"marisa"</span>)</div>
+    </div>
+
+    <div class="grid-2">
+      <h3>Example: Pubsub</h3>
+      <div class="code">subs := gore.<span class="func">NewSubscriptions</span>(conn)
+subs.<span class="func">Subscribe</span>("test")
+subs.<span class="func">PSubscribe</span>("tou*")
+<span class="keyword">go</span> <span class="keyword">func</span>() {
+    <span class="keyword">for</span> message := <span class="keyword">range</span> subs.<span class="func">Message</span>() {
+        <span class="keyword">if</span> message == <span class="keyword">nil</span> {
+            <span class="keyword">break</span>
+        }
+        fmt.<span class="func">Println</span>(<span class="string">"Got message from %s, originate from %s: %s"</span>, message.<span class="type">Channel</span>, message.<span class="type">OriginalChannel</span>, message.<span class="type">Message</span>)
+    }
+}()</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="grid-2">
+      <h3>Example: Sentinel</h3>
+      <div class="code">s := gore.<span class="func">NewSentinel</span>()
+s.<span class="func">AddServer</span>(<span class="string">"127.0.0.1:26379"</span>, <span class="string">"127.0.0.1:26380"</span>, <span class="string">"127.0.0.1:26381"</span>)
+err := s.<span class="func">Dial</span>()
+<span class="keyword">if</span> err != <span class="keyword">nil</span> {
+    <span class="keyword">return</span>
+}
+pool, err := s.<span class="func">GetPool</span>(<span class="string">"mymaster"</span>)</div>
+    </div>
+
+    <div class="grid-2">
+      <h3>Example: Sharding</h3>
+      <div class="code">s := gore.<span class="func">NewSentinel</span>()
+s.<span class="func">AddServer</span>(<span class="string">"127.0.0.1:26379"</span>, <span class="string">"127.0.0.1:26380"</span>, <span class="string">"127.0.0.1:26381"</span>)
+err := s.<span class="func">Dial</span>()
+<span class="keyword">if</span> err != <span class="keyword">nil</span> {
+    <span class="keyword">return</span>
+}
+c, err := s.<span class="func">GetCluster</span>(<span class="string">"mycluster"</span>)
+rep, err := c.<span class="func">Execute</span>(<span class="func">NewCommand</span>(<span class="string">"SET"</span>, <span class="string">"kirisame"</span>, <span class="string">"marisa"</span>))</div>
+    </div>
+  </div>
+  <div class="footer">
+  </div>
 </body>
 </html>
