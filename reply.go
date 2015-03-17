@@ -83,18 +83,29 @@ func (r *Reply) Float() (float64, error) {
 }
 
 // Bool parses string value to boolean.
-// String "0" returns false while string "1" returns true. Other values
-// will cause ErrConvert
+// Integer 0 and string "0" returns false while integer 1 and string "1" returns true.
+// Other values will cause ErrConvert
 func (r *Reply) Bool() (bool, error) {
-	s, err := r.String()
-	if err != nil {
-		return false, err
-	}
-	if s == "1" || s == "true"{
-		return true, nil
-	} else if s == "0" || s == "false" {
-		return false, nil
-	} else {
+	switch r.Type() {
+	case ReplyString:
+		s, _ := r.String()
+		if s == "1" || s == "true" {
+			return true, nil
+		} else if s == "0" || s == "false" {
+			return false, nil
+		} else {
+			return false, ErrConvert
+		}
+	case ReplyInteger:
+		i, _ := r.Int()
+		if i == 1 {
+			return true, nil
+		} else if i == 0 {
+			return false, nil
+		} else {
+			return false, ErrConvert
+		}
+	default:
 		return false, ErrConvert
 	}
 }
@@ -331,10 +342,10 @@ func Receive(conn *Conn) (r *Reply, err error) {
 		if err != nil {
 			conn.state = connStateNotConnected
 			conn.Unlock()
-                        conn.fail()
-                } else {
+			conn.fail()
+		} else {
 			conn.Unlock()
-                }
+		}
 	}()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetReadDeadline(time.Now().Add(conn.RequestTimeout))
