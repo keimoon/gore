@@ -32,7 +32,7 @@ type Subscriptions struct {
 	conn           *Conn
 	closed         bool
 	messageChannel chan *Message
-	lock           sync.Mutex
+	lock           sync.RWMutex
 	ready          bool
 	readyChannel   chan bool
 	// Sentinel will set this to true to handle read error from sentinel server.
@@ -88,6 +88,13 @@ func (s *Subscriptions) Close() {
 	close(s.messageChannel)
 }
 
+// IsClosed returns true if the subscription is no longer available
+func (s *Subscriptions) IsClosed() bool {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	return s.closed
+}
+
 // Message returns a channel for receiving message event.
 // A nil message indicates the channel is closed.
 // The channel should be used from a separated goroutine.
@@ -105,12 +112,12 @@ func (s *Subscriptions) Message() chan *Message {
 
 func (s *Subscriptions) receive() {
 	for {
-		if s.closed {
+		if s.IsClosed() {
 			break
 		}
 		for !s.ready {
 			<-s.readyChannel
-			if s.closed {
+			if s.IsClosed() {
 				break
 			}
 		}
