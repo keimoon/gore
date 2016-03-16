@@ -1,10 +1,21 @@
 package gore
 
 import (
+	"os"
 	"testing"
 )
 
+func init() {
+	if os.Getenv("TEST_REDIS_CLIENT") != "" {
+		shouldTest = true
+	}
+}
+
 func TestTransaction(t *testing.T) {
+	if !shouldTest {
+		return
+	}
+
 	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
@@ -45,6 +56,10 @@ func TestTransaction(t *testing.T) {
 }
 
 func TestTransactionGoroutine(t *testing.T) {
+	if !shouldTest {
+		return
+	}
+
 	c := make(chan bool, 20)
 
 	for i := 0; i < 50; i++ {

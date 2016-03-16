@@ -1,10 +1,21 @@
 package gore
 
 import (
+	"os"
 	"testing"
 )
 
+func init() {
+	if os.Getenv("TEST_REDIS_CLIENT") != "" {
+		shouldTest = true
+	}
+}
+
 func TestSharding(t *testing.T) {
+	if !shouldTest {
+		return
+	}
+
 	c := NewCluster()
 	c.AddShard("127.0.0.1:6379", "127.0.0.1:6380")
 	err := c.Dial()

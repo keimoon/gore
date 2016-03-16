@@ -1,9 +1,16 @@
 package gore
 
 import (
+	"os"
 	"strconv"
 	"testing"
 )
+
+func init() {
+	if os.Getenv("TEST_REDIS_CLIENT") != "" {
+		shouldTest = true
+	}
+}
 
 func TestPubsub(t *testing.T) {
 	tp := &testPubsub{t: t}
@@ -38,6 +45,11 @@ func (tp *testPubsub) publisher() {
 	defer func() {
 		tp.pubEnd <- true
 	}()
+
+	if !shouldTest {
+		return
+	}
+
 	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
@@ -65,6 +77,11 @@ func (tp *testPubsub) subscriber() {
 	defer func() {
 		tp.subEnd <- true
 	}()
+
+	if !shouldTest {
+		return
+	}
+
 	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)

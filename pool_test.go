@@ -1,10 +1,21 @@
 package gore
 
 import (
+	"os"
 	"testing"
 )
 
+func init() {
+	if os.Getenv("TEST_REDIS_CLIENT") != "" {
+		shouldTest = true
+	}
+}
+
 func TestPool(t *testing.T) {
+	if !shouldTest {
+		return
+	}
+
 	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
@@ -70,6 +81,10 @@ func TestPool(t *testing.T) {
 }
 
 func TestPoolClose(t *testing.T) {
+	if !shouldTest {
+		return
+	}
+	
 	pool := &Pool{
 		InitialConn: 20,
 		MaximumConn: 20,
@@ -85,7 +100,7 @@ func TestPoolClose(t *testing.T) {
 			defer func() {
 				c <- true
 			}()
-			conn, err := pool.Acquire()			
+			conn, err := pool.Acquire()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -95,7 +110,7 @@ func TestPoolClose(t *testing.T) {
 		}()
 	}
 	for i := 0; i < 20; i++ {
-		<- ready
+		<-ready
 	}
 	pool.Close()
 	for i := 0; i < 1000; i++ {

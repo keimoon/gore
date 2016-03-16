@@ -218,7 +218,7 @@ after that. To deal with this problem, gore provides conn.Auth() method:
 
   conn.Auth("secret password")
 
-This method should be called when the connection is initialized. By calling Auth(), when 
+This method should be called when the connection is initialized. By calling Auth(), when
 gore tries to reconnect, is will also attempt to send AUTH command to redis server right
 after the connection is made.
 

@@ -1,10 +1,25 @@
 package gore
 
 import (
+	"os"
 	"testing"
 )
 
+var (
+	shouldTest = false
+)
+
+func init() {
+	if os.Getenv("TEST_REDIS_CLIENT") != "" {
+		shouldTest = true
+	}
+}
+
 func TestGetSetBasic(t *testing.T) {
+	if !shouldTest {
+		return
+	}
+
 	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
@@ -39,6 +54,10 @@ func TestGetSetBasic(t *testing.T) {
 }
 
 func TestValueConverting(t *testing.T) {
+	if !shouldTest {
+		return
+	}
+
 	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
@@ -106,6 +125,10 @@ func TestValueConverting(t *testing.T) {
 }
 
 func TestArrayValue(t *testing.T) {
+	if !shouldTest {
+		return
+	}
+
 	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
@@ -185,6 +208,10 @@ func TestArrayValue(t *testing.T) {
 }
 
 func TestCommandGoroutine(t *testing.T) {
+	if !shouldTest {
+		return
+	}
+
 	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)

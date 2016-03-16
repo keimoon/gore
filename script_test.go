@@ -6,6 +6,12 @@ import (
 	"testing"
 )
 
+func init() {
+	if os.Getenv("TEST_REDIS_CLIENT") != "" {
+		shouldTest = true
+	}
+}
+
 var scriptSet = `
 return redis.call('SET', KEYS[1], ARGV[1])
 `
@@ -19,6 +25,10 @@ return redis.call('ZRANGE', KEYS[1], 0, -1)
 `
 
 func TestScript(t *testing.T) {
+	if !shouldTest {
+		return
+	}
+
 	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
@@ -73,6 +83,11 @@ func TestScriptMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	if !shouldTest {
+		return
+	}
+
 	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
