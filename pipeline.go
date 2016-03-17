@@ -36,10 +36,10 @@ func (p *Pipeline) Run(conn *Conn) (r []*Reply, err error) {
 	}
 	conn.Lock()
 	defer func() {
-                conn.Unlock()
-                if err != nil {
-                        conn.fail()
-                }
+		conn.Unlock()
+		if err != nil {
+			conn.fail()
+		}
 	}()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetWriteDeadline(time.Now().Add(conn.RequestTimeout * time.Duration(len(p.commands)/10+1)))

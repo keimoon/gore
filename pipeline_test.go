@@ -1,10 +1,21 @@
 package gore
 
 import (
+	"os"
 	"testing"
 )
 
+func init() {
+	if os.Getenv("TEST_REDIS_CLIENT") != "" {
+		shouldTest = true
+	}
+}
+
 func TestPipeline(t *testing.T) {
+	if !shouldTest {
+		return
+	}
+
 	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)
@@ -47,6 +58,10 @@ func TestPipeline(t *testing.T) {
 }
 
 func TestPipelineGoroutine(t *testing.T) {
+	if !shouldTest {
+		return
+	}
+
 	conn, err := Dial("localhost:6379")
 	if err != nil {
 		t.Fatal(err)

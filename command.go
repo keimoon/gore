@@ -61,10 +61,10 @@ func (cmd *Command) Send(conn *Conn) (err error) {
 		if err != nil {
 			conn.state = connStateNotConnected
 			conn.Unlock()
-                        conn.fail()
-                } else {
+			conn.fail()
+		} else {
 			conn.Unlock()
-                }
+		}
 	}()
 	if conn.RequestTimeout != 0 {
 		conn.tcpConn.SetWriteDeadline(time.Now().Add(conn.RequestTimeout))
